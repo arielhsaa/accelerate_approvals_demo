@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "postCreate": "echo 'Databricks Payment Authorization Demo - No additional setup required. Upload notebooks to Databricks workspace to begin.'"
+  }
+}
