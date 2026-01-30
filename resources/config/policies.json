@@ -1,0 +1,536 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-01-30",
+  "description": "Master policy configuration for payment authorization optimization",
+  
+  "payment_solutions": {
+    "3DS": {
+      "id": "3ds_authentication",
+      "name": "3D Secure Authentication",
+      "description": "Strong Customer Authentication (SCA) compliance",
+      "type": "authentication",
+      "mandatory_regions": ["EU", "UK", "IN", "AU"],
+      "mandatory_merchant_categories": ["high_risk", "gambling", "crypto"],
+      "risk_reduction_factor": 0.35,
+      "approval_impact": -0.08,
+      "cost_per_transaction_usd": 0.15,
+      "processing_time_ms": 2500,
+      "success_rate": 0.92,
+      "enabled": true,
+      "priority": 1
+    },
+    "Antifraud": {
+      "id": "antifraud_scoring",
+      "name": "Real-time Fraud Scoring",
+      "description": "ML-based fraud detection and risk scoring",
+      "type": "risk_assessment",
+      "mandatory_regions": [],
+      "mandatory_merchant_categories": [],
+      "risk_reduction_factor": 0.45,
+      "approval_impact": -0.05,
+      "cost_per_transaction_usd": 0.10,
+      "processing_time_ms": 150,
+      "success_rate": 0.96,
+      "enabled": true,
+      "priority": 2,
+      "thresholds": {
+        "low_risk": 0.3,
+        "medium_risk": 0.6,
+        "high_risk": 0.85,
+        "critical_risk": 0.95
+      }
+    },
+    "IDPay": {
+      "id": "identity_verification",
+      "name": "Identity Verification",
+      "description": "Enhanced identity proofing and verification",
+      "type": "verification",
+      "mandatory_regions": [],
+      "mandatory_merchant_categories": ["financial_services", "insurance"],
+      "risk_reduction_factor": 0.25,
+      "approval_impact": 0.03,
+      "cost_per_transaction_usd": 0.20,
+      "processing_time_ms": 1800,
+      "success_rate": 0.89,
+      "enabled": true,
+      "priority": 3
+    },
+    "DataShareOnly": {
+      "id": "minimal_data_sharing",
+      "name": "Minimal Data Sharing",
+      "description": "Privacy-focused minimal data exchange",
+      "type": "data_optimization",
+      "mandatory_regions": [],
+      "mandatory_merchant_categories": [],
+      "excluded_merchant_categories": ["high_risk", "gambling"],
+      "risk_reduction_factor": 0.10,
+      "approval_impact": 0.08,
+      "cost_per_transaction_usd": 0.05,
+      "processing_time_ms": 50,
+      "success_rate": 0.94,
+      "enabled": true,
+      "priority": 5
+    },
+    "NetworkToken": {
+      "id": "network_tokenization",
+      "name": "Network Tokenization",
+      "description": "Card-on-file tokenization for improved security",
+      "type": "tokenization",
+      "mandatory_regions": [],
+      "mandatory_merchant_categories": [],
+      "risk_reduction_factor": 0.20,
+      "approval_impact": 0.12,
+      "cost_per_transaction_usd": 0.08,
+      "processing_time_ms": 100,
+      "success_rate": 0.97,
+      "enabled": true,
+      "priority": 4,
+      "supported_networks": ["Visa", "Mastercard", "AmEx", "Discover"]
+    },
+    "Passkey": {
+      "id": "biometric_authentication",
+      "name": "Passkey / Biometric Auth",
+      "description": "FIDO2-based passwordless authentication",
+      "type": "authentication",
+      "mandatory_regions": [],
+      "mandatory_merchant_categories": [],
+      "risk_reduction_factor": 0.40,
+      "approval_impact": 0.05,
+      "cost_per_transaction_usd": 0.12,
+      "processing_time_ms": 1200,
+      "success_rate": 0.91,
+      "enabled": true,
+      "priority": 2,
+      "supported_platforms": ["iOS", "Android", "WebAuthn"]
+    }
+  },
+
+  "routing_policies": {
+    "default_strategy": "optimize_approval_rate",
+    "strategies": {
+      "optimize_approval_rate": {
+        "description": "Maximize approval rate within risk constraints",
+        "weight_approval": 0.7,
+        "weight_cost": 0.1,
+        "weight_risk": 0.2,
+        "max_cost_per_transaction": 0.50,
+        "max_risk_score": 0.75
+      },
+      "minimize_cost": {
+        "description": "Minimize processing cost while maintaining approval rate",
+        "weight_approval": 0.4,
+        "weight_cost": 0.5,
+        "weight_risk": 0.1,
+        "max_cost_per_transaction": 0.25,
+        "max_risk_score": 0.80
+      },
+      "minimize_risk": {
+        "description": "Minimize fraud/risk while maintaining approval rate",
+        "weight_approval": 0.3,
+        "weight_cost": 0.1,
+        "weight_risk": 0.6,
+        "max_cost_per_transaction": 0.60,
+        "max_risk_score": 0.50
+      },
+      "balanced": {
+        "description": "Balanced approach across all dimensions",
+        "weight_approval": 0.4,
+        "weight_cost": 0.3,
+        "weight_risk": 0.3,
+        "max_cost_per_transaction": 0.40,
+        "max_risk_score": 0.70
+      }
+    },
+    "geo_specific_rules": {
+      "EU": {
+        "mandatory_solutions": ["3DS"],
+        "preferred_solutions": ["NetworkToken", "Antifraud"],
+        "max_processing_time_ms": 3000,
+        "strategy": "minimize_risk"
+      },
+      "UK": {
+        "mandatory_solutions": ["3DS"],
+        "preferred_solutions": ["NetworkToken"],
+        "max_processing_time_ms": 3000,
+        "strategy": "balanced"
+      },
+      "US": {
+        "mandatory_solutions": [],
+        "preferred_solutions": ["NetworkToken", "DataShareOnly"],
+        "max_processing_time_ms": 2000,
+        "strategy": "optimize_approval_rate"
+      },
+      "LATAM": {
+        "mandatory_solutions": [],
+        "preferred_solutions": ["Antifraud", "3DS"],
+        "max_processing_time_ms": 4000,
+        "strategy": "minimize_risk"
+      },
+      "APAC": {
+        "mandatory_solutions": [],
+        "preferred_solutions": ["NetworkToken", "Antifraud"],
+        "max_processing_time_ms": 2500,
+        "strategy": "optimize_approval_rate"
+      }
+    },
+    "merchant_constraints": {
+      "high_risk": {
+        "mandatory_solutions": ["3DS", "Antifraud", "IDPay"],
+        "max_transaction_amount": 5000,
+        "require_network_token": true
+      },
+      "low_risk": {
+        "mandatory_solutions": [],
+        "max_transaction_amount": null,
+        "allow_data_share_only": true
+      },
+      "medium_risk": {
+        "mandatory_solutions": ["Antifraud"],
+        "max_transaction_amount": 10000,
+        "require_network_token": false
+      }
+    },
+    "amount_based_rules": [
+      {
+        "min_amount": 0,
+        "max_amount": 50,
+        "required_solutions": [],
+        "recommended_solutions": ["DataShareOnly"],
+        "strategy": "minimize_cost"
+      },
+      {
+        "min_amount": 50,
+        "max_amount": 500,
+        "required_solutions": ["Antifraud"],
+        "recommended_solutions": ["NetworkToken"],
+        "strategy": "balanced"
+      },
+      {
+        "min_amount": 500,
+        "max_amount": 2500,
+        "required_solutions": ["Antifraud"],
+        "recommended_solutions": ["3DS", "NetworkToken"],
+        "strategy": "optimize_approval_rate"
+      },
+      {
+        "min_amount": 2500,
+        "max_amount": null,
+        "required_solutions": ["3DS", "Antifraud"],
+        "recommended_solutions": ["IDPay", "NetworkToken"],
+        "strategy": "minimize_risk"
+      }
+    ]
+  },
+
+  "cascading_rules": {
+    "enabled": true,
+    "max_cascade_attempts": 3,
+    "cascade_delay_ms": 500,
+    "decline_code_cascades": {
+      "05_DO_NOT_HONOR": {
+        "cascade_enabled": true,
+        "cascade_paths": [
+          {
+            "attempt": 1,
+            "solutions": ["NetworkToken", "3DS"],
+            "wait_seconds": 5,
+            "success_probability": 0.45
+          },
+          {
+            "attempt": 2,
+            "solutions": ["Passkey", "Antifraud"],
+            "wait_seconds": 10,
+            "success_probability": 0.35
+          },
+          {
+            "attempt": 3,
+            "solutions": ["3DS", "Antifraud", "IDPay"],
+            "wait_seconds": 30,
+            "success_probability": 0.25
+          }
+        ]
+      },
+      "51_INSUFFICIENT_FUNDS": {
+        "cascade_enabled": false,
+        "recommend_retry": true,
+        "retry_after_hours": 24,
+        "notify_cardholder": true
+      },
+      "61_EXCEEDS_LIMIT": {
+        "cascade_enabled": true,
+        "cascade_paths": [
+          {
+            "attempt": 1,
+            "solutions": ["NetworkToken", "DataShareOnly"],
+            "wait_seconds": 10,
+            "success_probability": 0.50
+          },
+          {
+            "attempt": 2,
+            "solutions": ["3DS"],
+            "wait_seconds": 60,
+            "success_probability": 0.30,
+            "suggest_amount_reduction": true
+          }
+        ]
+      },
+      "63_SECURITY_VIOLATION": {
+        "cascade_enabled": true,
+        "cascade_paths": [
+          {
+            "attempt": 1,
+            "solutions": ["3DS", "Antifraud", "IDPay"],
+            "wait_seconds": 60,
+            "success_probability": 0.40
+          },
+          {
+            "attempt": 2,
+            "solutions": ["Passkey", "3DS", "Antifraud"],
+            "wait_seconds": 300,
+            "success_probability": 0.30
+          }
+        ]
+      },
+      "91_ISSUER_UNAVAILABLE": {
+        "cascade_enabled": true,
+        "cascade_paths": [
+          {
+            "attempt": 1,
+            "solutions": null,
+            "wait_seconds": 1,
+            "success_probability": 0.85,
+            "route_to_alternative_acquirer": true
+          },
+          {
+            "attempt": 2,
+            "solutions": null,
+            "wait_seconds": 5,
+            "success_probability": 0.75,
+            "route_to_alternative_acquirer": true
+          }
+        ]
+      }
+    }
+  },
+
+  "retry_policies": {
+    "enabled": true,
+    "strategies": {
+      "recurring_payments": {
+        "description": "Automated retry for subscription/recurring billing",
+        "max_attempts": 5,
+        "backoff_schedule_hours": [1, 3, 24, 72, 168],
+        "optimal_retry_windows": {
+          "salary_days": [1, 2, 15, 16],
+          "business_hours": {"start": 9, "end": 17},
+          "avoid_weekends": true
+        },
+        "min_success_probability": 0.30,
+        "notify_cardholder_after_attempts": 2
+      },
+      "cardholder_initiated": {
+        "description": "User-triggered retry from checkout",
+        "max_attempts": 3,
+        "backoff_schedule_hours": [0, 1, 3],
+        "immediate_retry_threshold": 0.70,
+        "min_success_probability": 0.40,
+        "allow_amount_adjustment": true
+      },
+      "high_value_transaction": {
+        "description": "Special handling for transactions above threshold",
+        "min_amount_threshold": 5000,
+        "max_attempts": 7,
+        "backoff_schedule_hours": [0.5, 1, 2, 6, 12, 24, 48],
+        "require_manual_review": true,
+        "min_success_probability": 0.25
+      }
+    },
+    "decline_code_retry_rules": {
+      "05_DO_NOT_HONOR": {
+        "retry_allowed": true,
+        "min_wait_hours": 1,
+        "max_attempts": 4,
+        "success_probability_threshold": 0.35,
+        "try_alternative_solution_mix": true
+      },
+      "51_INSUFFICIENT_FUNDS": {
+        "retry_allowed": true,
+        "min_wait_hours": 24,
+        "max_attempts": 5,
+        "success_probability_threshold": 0.50,
+        "prefer_salary_days": true,
+        "allow_amount_adjustment": true,
+        "suggest_installment": true
+      },
+      "54_EXPIRED_CARD": {
+        "retry_allowed": false,
+        "require_card_update": true,
+        "notify_cardholder": true
+      },
+      "61_EXCEEDS_LIMIT": {
+        "retry_allowed": true,
+        "min_wait_hours": 6,
+        "max_attempts": 3,
+        "success_probability_threshold": 0.40,
+        "suggest_amount_split": true
+      },
+      "63_SECURITY_VIOLATION": {
+        "retry_allowed": true,
+        "min_wait_hours": 2,
+        "max_attempts": 2,
+        "success_probability_threshold": 0.30,
+        "require_enhanced_authentication": true
+      },
+      "91_ISSUER_UNAVAILABLE": {
+        "retry_allowed": true,
+        "min_wait_hours": 0.01,
+        "max_attempts": 5,
+        "success_probability_threshold": 0.60,
+        "immediate_retry_recommended": true
+      }
+    },
+    "issuer_specific_rules": {
+      "high_tech_issuers": {
+        "retry_success_rate": 0.75,
+        "optimal_retry_delay_hours": 1,
+        "best_retry_time": "business_hours"
+      },
+      "traditional_banks": {
+        "retry_success_rate": 0.55,
+        "optimal_retry_delay_hours": 24,
+        "best_retry_time": "salary_days"
+      },
+      "fintech_issuers": {
+        "retry_success_rate": 0.80,
+        "optimal_retry_delay_hours": 0.5,
+        "best_retry_time": "any"
+      }
+    }
+  },
+
+  "ml_model_config": {
+    "smart_checkout_model": {
+      "model_name": "smart_checkout_optimizer",
+      "version": "2.1.0",
+      "algorithm": "gradient_boosted_trees",
+      "features": [
+        "transaction_amount_log",
+        "cardholder_risk_score",
+        "merchant_risk_score",
+        "issuer_approval_rate_7d",
+        "channel_type_encoded",
+        "solution_mix_encoded",
+        "transaction_velocity_1h",
+        "cross_border_flag",
+        "high_risk_mcc_flag",
+        "time_of_day",
+        "day_of_week"
+      ],
+      "target": "approval_probability",
+      "min_confidence": 0.60,
+      "retrain_frequency_days": 7
+    },
+    "smart_retry_model": {
+      "model_name": "smart_retry_classifier",
+      "version": "1.5.0",
+      "algorithm": "gradient_boosted_trees",
+      "features": [
+        "time_since_last_attempt_hours",
+        "num_prior_attempts",
+        "last_reason_code_numeric",
+        "issuer_success_rate_7d",
+        "cardholder_risk_score",
+        "merchant_risk_score",
+        "is_salary_day",
+        "is_business_hours",
+        "day_of_week",
+        "transaction_amount_log",
+        "sector_risk_score",
+        "country_risk_score"
+      ],
+      "target": "retry_success_probability",
+      "min_approval_probability": 0.30,
+      "max_risk_score": 0.75,
+      "retrain_frequency_days": 3
+    },
+    "fraud_scoring_model": {
+      "model_name": "antifraud_risk_scorer",
+      "version": "3.2.0",
+      "algorithm": "neural_network",
+      "features": [
+        "transaction_amount_zscore",
+        "velocity_score",
+        "device_fingerprint_risk",
+        "geo_location_risk",
+        "behavior_anomaly_score",
+        "merchant_category_risk",
+        "time_based_risk",
+        "external_risk_signal"
+      ],
+      "target": "fraud_probability",
+      "threshold_low": 0.30,
+      "threshold_medium": 0.60,
+      "threshold_high": 0.85,
+      "threshold_critical": 0.95,
+      "retrain_frequency_days": 1
+    }
+  },
+
+  "monitoring_and_alerting": {
+    "kpi_thresholds": {
+      "approval_rate": {
+        "target": 0.85,
+        "warning_below": 0.80,
+        "critical_below": 0.75
+      },
+      "fraud_rate": {
+        "target": 0.01,
+        "warning_above": 0.02,
+        "critical_above": 0.05
+      },
+      "average_processing_time_ms": {
+        "target": 1500,
+        "warning_above": 2500,
+        "critical_above": 4000
+      },
+      "cascading_success_rate": {
+        "target": 0.40,
+        "warning_below": 0.30,
+        "critical_below": 0.20
+      },
+      "retry_success_rate": {
+        "target": 0.55,
+        "warning_below": 0.45,
+        "critical_below": 0.35
+      }
+    },
+    "alert_channels": {
+      "email": ["payments-team@example.com", "risk-team@example.com"],
+      "slack": "#payments-alerts",
+      "pagerduty": "payments-oncall"
+    },
+    "monitoring_frequency_seconds": 60
+  },
+
+  "feature_flags": {
+    "enable_smart_checkout": true,
+    "enable_cascading": true,
+    "enable_smart_retry": true,
+    "enable_network_tokenization": true,
+    "enable_biometric_auth": true,
+    "enable_ml_scoring": true,
+    "enable_real_time_updates": true,
+    "enable_a_b_testing": false,
+    "verbose_logging": false
+  },
+
+  "compliance": {
+    "pci_dss_compliant": true,
+    "gdpr_compliant": true,
+    "sca_compliant": true,
+    "data_retention_days": 2555,
+    "audit_log_retention_days": 2555,
+    "encryption_at_rest": true,
+    "encryption_in_transit": true
+  }
+}
