@@ -1,0 +1,106 @@
+{
+  "payment_solutions": {
+    "3DS": {
+      "description": "3D Secure authentication",
+      "mandatory_regions": ["EU", "UK", "IN"],
+      "risk_reduction": 0.35,
+      "approval_impact": -0.08,
+      "cost_per_transaction": 0.15
+    },
+    "Antifraud": {
+      "description": "Real-time fraud scoring",
+      "mandatory_regions": [],
+      "risk_reduction": 0.45,
+      "approval_impact": -0.05,
+      "cost_per_transaction": 0.10
+    },
+    "IDPay": {
+      "description": "Identity verification",
+      "mandatory_regions": [],
+      "risk_reduction": 0.25,
+      "approval_impact": 0.03,
+      "cost_per_transaction": 0.20
+    },
+    "DataShareOnly": {
+      "description": "Minimal data sharing",
+      "mandatory_regions": [],
+      "risk_reduction": 0.10,
+      "approval_impact": 0.08,
+      "cost_per_transaction": 0.05
+    },
+    "NetworkToken": {
+      "description": "Network tokenization",
+      "mandatory_regions": [],
+      "risk_reduction": 0.20,
+      "approval_impact": 0.12,
+      "cost_per_transaction": 0.08
+    },
+    "Passkey": {
+      "description": "Biometric authentication",
+      "mandatory_regions": [],
+      "risk_reduction": 0.40,
+      "approval_impact": 0.05,
+      "cost_per_transaction": 0.12
+    }
+  },
+  "cascading_rules": {
+    "decline_code_mappings": {
+      "05_DO_NOT_HONOR": {
+        "cascade_options": ["NetworkToken+3DS", "Passkey+Antifraud"],
+        "wait_time_seconds": 300
+      },
+      "51_INSUFFICIENT_FUNDS": {
+        "cascade_options": ["SmartRetry"],
+        "wait_time_seconds": 86400
+      },
+      "61_EXCEEDS_LIMIT": {
+        "cascade_options": ["NetworkToken+DataShareOnly"],
+        "wait_time_seconds": 600
+      },
+      "62_RESTRICTED_CARD": {
+        "cascade_options": [],
+        "wait_time_seconds": null
+      },
+      "63_SECURITY_VIOLATION": {
+        "cascade_options": ["3DS+Antifraud+IDPay"],
+        "wait_time_seconds": 3600
+      }
+    }
+  },
+  "merchant_constraints": {
+    "high_risk_mccs": [5967, 7995, 5122, 7273],
+    "require_enhanced_security": true
+  },
+  "issuer_routing_preferences": {
+    "VISA": {
+      "preferred_solutions": ["NetworkToken", "3DS"],
+      "decline_rate_threshold": 0.15
+    },
+    "MASTERCARD": {
+      "preferred_solutions": ["NetworkToken", "IDPay"],
+      "decline_rate_threshold": 0.18
+    },
+    "AMEX": {
+      "preferred_solutions": ["3DS", "Antifraud"],
+      "decline_rate_threshold": 0.12
+    }
+  },
+  "risk_thresholds": {
+    "low_risk": {
+      "max_score": 0.3,
+      "recommended_solutions": ["DataShareOnly"]
+    },
+    "medium_risk": {
+      "max_score": 0.6,
+      "recommended_solutions": ["Antifraud", "NetworkToken"]
+    },
+    "high_risk": {
+      "max_score": 0.85,
+      "recommended_solutions": ["3DS", "Antifraud", "IDPay"]
+    },
+    "critical_risk": {
+      "max_score": 1.0,
+      "recommended_solutions": ["3DS", "Antifraud", "IDPay", "Passkey"]
+    }
+  }
+}

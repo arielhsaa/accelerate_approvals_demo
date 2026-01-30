@@ -1,0 +1,201 @@
+{
+  "reason_code_taxonomy": {
+    "00_APPROVED": {
+      "category": "Approved",
+      "severity": "none",
+      "actionable": false,
+      "description": "Transaction approved"
+    },
+    "05_DO_NOT_HONOR": {
+      "category": "Soft Decline",
+      "severity": "medium",
+      "actionable": true,
+      "description": "Generic decline by issuer",
+      "root_causes": [
+        "Risk scoring threshold",
+        "Velocity controls",
+        "Geographic restrictions",
+        "Merchant category restrictions"
+      ],
+      "recommended_actions": [
+        "Enable 3DS authentication",
+        "Use Network Tokenization",
+        "Retry with alternative acquirer",
+        "Contact issuer for whitelist"
+      ]
+    },
+    "14_INVALID_CARD": {
+      "category": "Hard Decline",
+      "severity": "high",
+      "actionable": false,
+      "description": "Card number is invalid",
+      "root_causes": [
+        "Data entry error",
+        "Invalid BIN",
+        "Card not issued"
+      ],
+      "recommended_actions": [
+        "Request cardholder to verify card details",
+        "Check BIN database"
+      ]
+    },
+    "51_INSUFFICIENT_FUNDS": {
+      "category": "Soft Decline",
+      "severity": "low",
+      "actionable": true,
+      "description": "Not enough funds in account",
+      "root_causes": [
+        "Account balance low",
+        "Available credit limit exceeded"
+      ],
+      "recommended_actions": [
+        "Retry after salary days (1st, 15th)",
+        "Offer installment payment options",
+        "Reduce transaction amount"
+      ]
+    },
+    "54_EXPIRED_CARD": {
+      "category": "Hard Decline",
+      "severity": "medium",
+      "actionable": false,
+      "description": "Card has expired",
+      "root_causes": [
+        "Card past expiration date",
+        "Renewal not completed"
+      ],
+      "recommended_actions": [
+        "Request updated card details",
+        "Trigger card update service"
+      ]
+    },
+    "57_FUNCTION_NOT_PERMITTED": {
+      "category": "Hard Decline",
+      "severity": "medium",
+      "actionable": true,
+      "description": "Transaction type not allowed for card",
+      "root_causes": [
+        "Card restrictions (e.g., no online transactions)",
+        "Geographic restrictions",
+        "MCC restrictions"
+      ],
+      "recommended_actions": [
+        "Enable 3DS to prove cardholder identity",
+        "Contact issuer for card type upgrade",
+        "Offer alternative payment method"
+      ]
+    },
+    "61_EXCEEDS_LIMIT": {
+      "category": "Soft Decline",
+      "severity": "medium",
+      "actionable": true,
+      "description": "Transaction amount exceeds limit",
+      "root_causes": [
+        "Single transaction limit",
+        "Daily/monthly spending limit",
+        "Velocity controls"
+      ],
+      "recommended_actions": [
+        "Split transaction into smaller amounts",
+        "Retry next day after limits reset",
+        "Request limit increase from issuer"
+      ]
+    },
+    "62_RESTRICTED_CARD": {
+      "category": "Hard Decline",
+      "severity": "high",
+      "actionable": false,
+      "description": "Card is restricted or blocked",
+      "root_causes": [
+        "Lost or stolen card",
+        "Fraud suspicion",
+        "Compliance hold",
+        "Account closure"
+      ],
+      "recommended_actions": [
+        "Contact issuer immediately",
+        "Request alternative payment method",
+        "Verify cardholder identity"
+      ]
+    },
+    "63_SECURITY_VIOLATION": {
+      "category": "Hard Decline",
+      "severity": "critical",
+      "actionable": true,
+      "description": "Security code (CVV) mismatch or fraud suspected",
+      "root_causes": [
+        "CVV mismatch",
+        "AVS mismatch",
+        "Fraud scoring threshold",
+        "Suspicious pattern detected"
+      ],
+      "recommended_actions": [
+        "Enable 3DS + Antifraud + IDPay",
+        "Request cardholder to verify details",
+        "Use biometric authentication (Passkey)",
+        "Contact fraud team"
+      ]
+    },
+    "65_EXCEEDS_FREQUENCY": {
+      "category": "Soft Decline",
+      "severity": "medium",
+      "actionable": true,
+      "description": "Too many transactions in short period",
+      "root_causes": [
+        "Velocity controls triggered",
+        "Unusual spending pattern",
+        "Multiple retry attempts"
+      ],
+      "recommended_actions": [
+        "Wait 24 hours before retry",
+        "Consolidate multiple small transactions",
+        "Contact issuer to explain legitimate usage"
+      ]
+    },
+    "91_ISSUER_UNAVAILABLE": {
+      "category": "Technical",
+      "severity": "medium",
+      "actionable": true,
+      "description": "Issuer system timeout or unavailable",
+      "root_causes": [
+        "Issuer system downtime",
+        "Network timeout",
+        "Maintenance window"
+      ],
+      "recommended_actions": [
+        "Immediate retry (30-60 seconds)",
+        "Route through alternative acquirer",
+        "Monitor issuer status"
+      ]
+    },
+    "96_SYSTEM_ERROR": {
+      "category": "Technical",
+      "severity": "high",
+      "actionable": true,
+      "description": "System malfunction",
+      "root_causes": [
+        "Payment gateway error",
+        "Integration issue",
+        "Data format error"
+      ],
+      "recommended_actions": [
+        "Check integration logs",
+        "Validate message format",
+        "Escalate to technical team"
+      ]
+    }
+  },
+  "analytics_segments": {
+    "by_geography": ["US", "EU", "UK", "LATAM", "APAC", "MEA"],
+    "by_channel": ["ecommerce", "mpos", "pos", "recurring", "moto"],
+    "by_merchant_segment": ["enterprise", "smb", "high_risk", "low_risk"],
+    "by_issuer": ["VISA", "MASTERCARD", "AMEX", "DISCOVER"],
+    "by_solution_mix": [
+      "baseline",
+      "3DS_only",
+      "NetworkToken_only",
+      "3DS+Antifraud",
+      "NetworkToken+3DS",
+      "Full_Stack"
+    ]
+  }
+}

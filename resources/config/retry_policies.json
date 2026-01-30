@@ -1,0 +1,97 @@
+{
+  "retry_strategies": {
+    "recurring_payments": {
+      "max_attempts": 5,
+      "backoff_schedule": [1, 3, 7, 14, 30],
+      "optimal_retry_windows": {
+        "salary_days": [1, 2, 15, 16],
+        "business_hours": {
+          "start": 9,
+          "end": 17
+        }
+      }
+    },
+    "cardholder_initiated": {
+      "max_attempts": 3,
+      "backoff_schedule": [0, 1, 3],
+      "immediate_retry_threshold": 0.7
+    }
+  },
+  "decline_code_retry_rules": {
+    "05_DO_NOT_HONOR": {
+      "retry_allowed": true,
+      "min_wait_hours": 1,
+      "success_probability_threshold": 0.35
+    },
+    "51_INSUFFICIENT_FUNDS": {
+      "retry_allowed": true,
+      "min_wait_hours": 24,
+      "success_probability_threshold": 0.50,
+      "prefer_salary_days": true
+    },
+    "54_EXPIRED_CARD": {
+      "retry_allowed": false,
+      "min_wait_hours": null,
+      "success_probability_threshold": 0.0
+    },
+    "61_EXCEEDS_LIMIT": {
+      "retry_allowed": true,
+      "min_wait_hours": 6,
+      "success_probability_threshold": 0.40
+    },
+    "62_RESTRICTED_CARD": {
+      "retry_allowed": false,
+      "min_wait_hours": null,
+      "success_probability_threshold": 0.0
+    },
+    "63_SECURITY_VIOLATION": {
+      "retry_allowed": true,
+      "min_wait_hours": 12,
+      "success_probability_threshold": 0.25
+    },
+    "65_EXCEEDS_FREQUENCY": {
+      "retry_allowed": true,
+      "min_wait_hours": 24,
+      "success_probability_threshold": 0.45
+    },
+    "91_ISSUER_UNAVAILABLE": {
+      "retry_allowed": true,
+      "min_wait_hours": 0.5,
+      "success_probability_threshold": 0.60
+    }
+  },
+  "issuer_specific_rules": {
+    "VISA": {
+      "optimal_retry_hours": [9, 10, 11, 14, 15, 16],
+      "avoid_weekend_retry": false
+    },
+    "MASTERCARD": {
+      "optimal_retry_hours": [10, 11, 12, 15, 16, 17],
+      "avoid_weekend_retry": false
+    },
+    "AMEX": {
+      "optimal_retry_hours": [8, 9, 10, 14, 15],
+      "avoid_weekend_retry": true
+    }
+  },
+  "ml_model_config": {
+    "model_name": "smart_retry_classifier",
+    "version": "1.0.0",
+    "features": [
+      "time_since_last_attempt_hours",
+      "num_prior_attempts",
+      "last_reason_code_numeric",
+      "issuer_success_rate_7d",
+      "cardholder_risk_score",
+      "merchant_risk_score",
+      "is_salary_day",
+      "is_business_hours",
+      "day_of_week",
+      "transaction_amount_log",
+      "sector_risk_score",
+      "country_risk_score"
+    ],
+    "min_approval_probability": 0.30,
+    "max_risk_score": 0.75
+  }
+}
