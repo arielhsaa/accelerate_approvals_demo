@@ -68,8 +68,100 @@
     }
   },
   "merchant_constraints": {
-    "high_risk_mccs": [5967, 7995, 5122, 7273],
-    "require_enhanced_security": true
+    "high_risk": {
+      "description": "High-risk merchants requiring enhanced security",
+      "mcc_codes": [5967, 7995, 5122, 7273, 7801, 7802, 5993, 4816],
+      "categories": ["gambling", "crypto", "adult_content", "telemarketing"],
+      "mandatory_solutions": ["3DS", "Antifraud", "IDPay"],
+      "max_transaction_amount": 5000,
+      "require_network_token": true,
+      "additional_verification": true,
+      "decline_rate_tolerance": 0.25,
+      "fraud_monitoring_level": "critical"
+    },
+    "medium_risk": {
+      "description": "Medium-risk merchants with standard controls",
+      "mcc_codes": [5411, 5541, 5812, 5814, 5912, 5999, 7299],
+      "categories": ["grocery", "gas_stations", "restaurants", "retail"],
+      "mandatory_solutions": ["Antifraud"],
+      "max_transaction_amount": 10000,
+      "require_network_token": false,
+      "additional_verification": false,
+      "decline_rate_tolerance": 0.15,
+      "fraud_monitoring_level": "standard"
+    },
+    "low_risk": {
+      "description": "Low-risk merchants with minimal restrictions",
+      "mcc_codes": [5311, 5331, 5399, 5451, 5691, 5732, 5942],
+      "categories": ["department_stores", "pharmacies", "books", "home_goods"],
+      "mandatory_solutions": [],
+      "max_transaction_amount": null,
+      "allow_data_share_only": true,
+      "require_network_token": false,
+      "additional_verification": false,
+      "decline_rate_tolerance": 0.10,
+      "fraud_monitoring_level": "basic"
+    },
+    "regulated": {
+      "description": "Regulated industries with compliance requirements",
+      "mcc_codes": [6010, 6011, 6012, 6051, 8011, 8021, 8062],
+      "categories": ["financial_services", "healthcare", "insurance", "legal"],
+      "mandatory_solutions": ["3DS", "IDPay"],
+      "max_transaction_amount": 25000,
+      "require_network_token": true,
+      "additional_verification": true,
+      "kyc_required": true,
+      "pci_level_1_required": true,
+      "decline_rate_tolerance": 0.12,
+      "fraud_monitoring_level": "high"
+    },
+    "cross_border_restrictions": {
+      "high_risk_countries": ["NG", "GH", "PK", "ID", "RO"],
+      "require_3ds_for_cross_border": true,
+      "max_cross_border_amount": 2500,
+      "additional_fraud_checks": true
+    },
+    "amount_based_constraints": [
+      {
+        "min_amount": 0,
+        "max_amount": 50,
+        "required_solutions": [],
+        "allow_streamlined_checkout": true
+      },
+      {
+        "min_amount": 50,
+        "max_amount": 500,
+        "required_solutions": ["Antifraud"],
+        "allow_streamlined_checkout": true
+      },
+      {
+        "min_amount": 500,
+        "max_amount": 2500,
+        "required_solutions": ["Antifraud"],
+        "recommend_3ds": true,
+        "allow_streamlined_checkout": false
+      },
+      {
+        "min_amount": 2500,
+        "max_amount": null,
+        "required_solutions": ["3DS", "Antifraud"],
+        "recommend_idpay": true,
+        "manual_review_threshold": 10000,
+        "allow_streamlined_checkout": false
+      }
+    ],
+    "velocity_limits": {
+      "transactions_per_hour": {
+        "high_risk": 5,
+        "medium_risk": 20,
+        "low_risk": 50
+      },
+      "total_amount_per_day": {
+        "high_risk": 10000,
+        "medium_risk": 50000,
+        "low_risk": 100000
+      }
+    }
   },
   "issuer_routing_preferences": {
     "VISA": {
