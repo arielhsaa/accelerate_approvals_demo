@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 06 - Databricks App: Live Payment Authorization Monitor
-# MAGIC 
+# MAGIC
 # MAGIC ## Overview
 # MAGIC Interactive Databricks App for real-time monitoring and control of the payment authorization system:
 # MAGIC - **Live Transaction Stream**: Real-time view of authorizations with solution mix
@@ -10,7 +10,7 @@
 # MAGIC - **Data Flow Visualization**: Transaction journey from ingestion to decision
 # MAGIC - **Geographic Heatmap**: Performance by country
 # MAGIC - **What-If Analysis**: Simulate policy changes and see projected impact
-# MAGIC 
+# MAGIC
 # MAGIC ## Target Users
 # MAGIC - Payment Operations: Monitor real-time performance
 # MAGIC - Product Managers: Test and optimize routing policies
@@ -279,148 +279,62 @@ if kpi_data is not None:
 
 # COMMAND ----------
 
-if show_streaming:
-    st.header("📡 Live Transaction Stream")
-    
-    # Load recent transactions
-    df_recent = load_recent_transactions(limit=50)
-    
-    if len(df_recent) > 0:
-        # Summary stats
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            approval_rate = (df_recent['is_approved'].sum() / len(df_recent)) * 100
-            st.metric("Recent Approval Rate", f"{approval_rate:.1f}%")
-        
-        with col2:
-            avg_uplift = df_recent['approval_uplift_pct'].mean()
-            st.metric("Avg Uplift", f"{avg_uplift:.1f}%")
-        
-        with col3:
-            avg_risk = df_recent['composite_risk_score'].mean()
-            st.metric("Avg Risk", f"{avg_risk:.3f}")
-        
-        with col4:
-            total_value = df_recent['amount'].sum()
-            st.metric("Total Value", f"${total_value:,.2f}")
-        
-        # Filter controls
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            status_filter = st.multiselect(
-                "Filter by Status",
-                options=['All', 'Approved', 'Declined'],
-                default=['All']
-            )
-        
-        with col2:
-            channel_filter = st.multiselect(
-                "Filter by Channel",
-                options=['All'] + list(df_recent['channel'].unique()),
-                default=['All']
-            )
-        
-        with col3:
-            network_filter = st.multiselect(
-                "Filter by Network",
-                options=['All'] + list(df_recent['card_network'].unique()),
-                default=['All']
-            )
-        
-        # Apply filters
-        df_filtered = df_recent.copy()
-        
-        if 'All' not in status_filter and len(status_filter) > 0:
-            if 'Approved' in status_filter and 'Declined' not in status_filter:
-                df_filtered = df_filtered[df_filtered['is_approved'] == True]
-            elif 'Declined' in status_filter and 'Approved' not in status_filter:
-                df_filtered = df_filtered[df_filtered['is_approved'] == False]
-        
-        if 'All' not in channel_filter and len(channel_filter) > 0:
-            df_filtered = df_filtered[df_filtered['channel'].isin(channel_filter)]
-        
-        if 'All' not in network_filter and len(network_filter) > 0:
-            df_filtered = df_filtered[df_filtered['card_network'].isin(network_filter)]
-        
-        # Display transaction table
-        st.dataframe(
-            df_filtered.style.format({
-                'amount': '${:.2f}',
-                'expected_approval_prob': '{:.2%}',
-                'composite_risk_score': '{:.3f}',
-                'adjusted_risk_score': '{:.3f}',
-                'approval_uplift_pct': '{:.1f}%',
-                'solution_cost': '${:.2f}'
-            }).applymap(
-                lambda x: 'background-color: #d4edda' if x else 'background-color: #f8d7da',
-                subset=['is_approved']
-            ),
-            use_container_width=True,
-            height=400
-        )
-        
-        # Transaction flow visualization
-        st.subheader("Transaction Flow Sankey")
-        
-        # Prepare data for Sankey
-        flow_data = df_filtered.copy()
-        
-        # Define nodes
-        source_nodes = []
-        target_nodes = []
-        values = []
-        
-        # Channel -> Solution
-        channel_solution = flow_data.groupby(['channel', 'recommended_solution_name']).size().reset_index(name='count')
-        source_nodes.extend(channel_solution['channel'].tolist())
-        target_nodes.extend(channel_solution['recommended_solution_name'].tolist())
-        values.extend(channel_solution['count'].tolist())
-        
-        # Solution -> Outcome
-        solution_outcome = flow_data.groupby(['recommended_solution_name', 'is_approved']).size().reset_index(name='count')
-        solution_outcome['outcome'] = solution_outcome['is_approved'].apply(lambda x: 'Approved' if x else 'Declined')
-        source_nodes.extend(solution_outcome['recommended_solution_name'].tolist())
-        target_nodes.extend(solution_outcome['outcome'].tolist())
-        values.extend(solution_outcome['count'].tolist())
-        
-        # Create unique node list
-        all_nodes = list(set(source_nodes + target_nodes))
-        node_dict = {node: idx for idx, node in enumerate(all_nodes)}
-        
-        # Map to indices
-        source_indices = [node_dict[node] for node in source_nodes]
-        target_indices = [node_dict[node] for node in target_nodes]
-        
-        # Create Sankey diagram
-        fig_sankey = go.Figure(data=[go.Sankey(
-            node=dict(
-                pad=15,
-                thickness=20,
-                line=dict(color="black", width=0.5),
-                label=all_nodes,
-                color="blue"
-            ),
-            link=dict(
-                source=source_indices,
-                target=target_indices,
-                value=values
-            )
-        )])
-        
-        fig_sankey.update_layout(
-            title="Transaction Flow: Channel → Solution Mix → Outcome",
-            font_size=10,
-            height=400
-        )
-        
-        st.plotly_chart(fig_sankey, use_container_width=True)
-    
-    else:
-        st.warning("No recent transactions available")
-    
-    st.markdown("---")
+# MAGIC %md
+# MAGIC %md
+# MAGIC ## ✅ Setup Complete!
+# MAGIC
+# MAGIC ### What You've Created:
+# MAGIC
+# MAGIC #### 📊 SQL Views (Ready for Dashboards):
+# MAGIC 1. `v_executive_kpis` - Overall performance summary
+# MAGIC 2. `v_approval_trends_hourly` - Time-based trends
+# MAGIC 3. `v_performance_by_geography` - Geographic analysis
+# MAGIC 4. `v_smart_checkout_solution_performance` - Solution effectiveness
+# MAGIC 5. `v_solution_performance_by_geography` - Solution × Geography matrix
+# MAGIC 6. `v_solution_performance_by_issuer` - Solution × Issuer matrix
+# MAGIC 7. `v_solution_performance_by_channel` - Solution × Channel matrix
+# MAGIC 8. `v_top_decline_reasons` - Decline analysis
+# MAGIC 9. `v_actionable_insights_summary` - Action recommendations
+# MAGIC 10. `transaction_approval_performance_smart_checkout` - Smart Checkout metrics
+# MAGIC 11. `transaction_approval_performance_smart_retry` - Smart Retry metrics
+# MAGIC
+# MAGIC #### 🧞 Genie-Optimized Views:
+# MAGIC 1. `v_genie_approval_summary` - Simplified approval metrics
+# MAGIC 2. `v_genie_solution_summary` - Simplified solution performance
+# MAGIC 3. `v_genie_decline_summary` - Simplified decline reasons
+# MAGIC 4. `v_genie_retry_summary` - Simplified retry recommendations
+# MAGIC
+# MAGIC ### Next Steps:
+# MAGIC
+# MAGIC 1. **Create AI/BI Dashboard**:
+# MAGIC    * Go to Dashboards → Create Dashboard → AI/BI Dashboard
+# MAGIC    * Use natural language to add visualizations from the views above
+# MAGIC    * Arrange in 2-column layout
+# MAGIC    * Set refresh to 5 minutes
+# MAGIC
+# MAGIC 2. **Create Genie Space**:
+# MAGIC    * Go to Genie → Create Space
+# MAGIC    * Add tables: payments_enriched_stream, smart_retry_recommendations
+# MAGIC    * Add views: All v_genie_* views
+# MAGIC    * Paste instructions from above
+# MAGIC    * Test with sample questions
+# MAGIC
+# MAGIC 3. **Share with Stakeholders**:
+# MAGIC    * Dashboard: Share with executives and product managers
+# MAGIC    * Genie: Share with analysts and business users
+# MAGIC    * Set appropriate permissions
+# MAGIC
+# MAGIC ### 🎯 Business Value:
+# MAGIC
+# MAGIC * **Real-time monitoring** of approval rates and optimization impact
+# MAGIC * **Self-service analytics** for business users via Genie
+# MAGIC * **Actionable insights** from decline reason analysis
+# MAGIC * **Revenue recovery** tracking from Smart Retry
+# MAGIC * **Geographic and segment** performance visibility
+# MAGIC
+# MAGIC ---
+# MAGIC
+# MAGIC **🚀 Your payment approval acceleration analytics platform is ready!**
 
 # COMMAND ----------
 
@@ -820,6 +734,10 @@ st.markdown("---")
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
 st.header("🔮 What-If Analysis: Policy Simulation")
 
 st.markdown("""
@@ -860,7 +778,143 @@ st.markdown("---")
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## 🧞 Genie Space Setup Guide
+# MAGIC
+# MAGIC ### Step 1: Create Genie Space
+# MAGIC
+# MAGIC 1. Navigate to **Genie** in your Databricks workspace
+# MAGIC 2. Click **Create Space**
+# MAGIC 3. Name: **"Payment Approval Analytics"**
+# MAGIC 4. Description: **"Natural language analytics for payment approval optimization"**
+# MAGIC
+# MAGIC ### Step 2: Add Tables to Genie Space
+# MAGIC
+# MAGIC Add these tables from **payments_lakehouse** catalog:
+# MAGIC
+# MAGIC #### Silver Layer (Detailed Data):
+# MAGIC * `silver.payments_enriched_stream` - All transaction details with Smart Checkout decisions
+# MAGIC
+# MAGIC #### Gold Layer (Aggregated Metrics):
+# MAGIC * `gold.v_executive_kpis` - Executive summary metrics
+# MAGIC * `gold.v_approval_trends_hourly` - Time-based trends
+# MAGIC * `gold.v_performance_by_geography` - Geographic analysis
+# MAGIC * `gold.v_smart_checkout_solution_performance` - Solution effectiveness
+# MAGIC * `gold.v_top_decline_reasons` - Decline analysis
+# MAGIC * `gold.smart_retry_recommendations` - Retry recommendations
+# MAGIC * `gold.reason_code_insights` - Actionable insights
+# MAGIC
+# MAGIC ### Step 3: Add Instructions for Genie
+# MAGIC
+# MAGIC Paste this in the **Instructions** field:
+# MAGIC
+# MAGIC ```
+# MAGIC This space contains payment transaction data for approval rate optimization.
+# MAGIC
+# MAGIC Key Tables:
+# MAGIC - payments_enriched_stream: Real-time transaction data with Smart Checkout decisions
+# MAGIC - smart_retry_recommendations: ML-powered retry recommendations
+# MAGIC - v_executive_kpis: High-level performance metrics
+# MAGIC
+# MAGIC Key Metrics:
+# MAGIC - approval_rate_pct: Percentage of approved transactions
+# MAGIC - approval_uplift_pct: Improvement from Smart Checkout optimization
+# MAGIC - retry_success_probability: Predicted success rate for retries
+# MAGIC - composite_risk_score: Combined risk assessment (0-1 scale)
+# MAGIC
+# MAGIC Key Dimensions:
+# MAGIC - recommended_solution_name: Payment solution applied (3DS, Antifraud, etc.)
+# MAGIC - reason_code: Decline reason codes
+# MAGIC - cardholder_country: Geographic location
+# MAGIC - channel: Transaction channel (ecommerce, mpos, pos, etc.)
+# MAGIC - card_network: Card issuer network (VISA, MASTERCARD, etc.)
+# MAGIC
+# MAGIC Time Columns:
+# MAGIC - timestamp: Transaction time
+# MAGIC - decision_timestamp: When Smart Checkout decision was made
+# MAGIC
+# MAGIC For declined transactions, filter: is_approved = false
+# MAGIC For retry analysis, use: retry_action column (RETRY_NOW, RETRY_LATER, DO_NOT_RETRY)
+# MAGIC ```
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Footer
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 🧞 Sample Genie Questions
+# MAGIC
+# MAGIC ### Executive Questions
+# MAGIC
+# MAGIC 1. **"What is the current approval rate?"**
+# MAGIC    * Returns overall approval_rate_pct from v_executive_kpis
+# MAGIC
+# MAGIC 2. **"Show me approval rate trends for the last 7 days"**
+# MAGIC    * Queries v_approval_trends_hourly with date filtering
+# MAGIC
+# MAGIC 3. **"How much revenue are we losing to declines?"**
+# MAGIC    * Calculates declined_value from v_executive_kpis
+# MAGIC
+# MAGIC 4. **"What's the average approval uplift from Smart Checkout?"**
+# MAGIC    * Returns avg_approval_uplift_pct from v_executive_kpis
+# MAGIC
+# MAGIC ### Smart Checkout Questions
+# MAGIC
+# MAGIC 5. **"Which payment solution has the highest approval rate?"**
+# MAGIC    * Queries v_smart_checkout_solution_performance, orders by actual_approval_pct
+# MAGIC
+# MAGIC 6. **"Show me solution performance by country"**
+# MAGIC    * Returns data from v_solution_performance_by_geography
+# MAGIC
+# MAGIC 7. **"What's the most cost-effective payment solution?"**
+# MAGIC    * Analyzes avg_cost_usd vs actual_approval_pct from v_smart_checkout_solution_performance
+# MAGIC
+# MAGIC 8. **"Which solutions are used most frequently?"**
+# MAGIC    * Shows transaction_count by solution_mix from v_smart_checkout_solution_performance
+# MAGIC
+# MAGIC ### Reason Code Questions
+# MAGIC
+# MAGIC 9. **"What are the top 5 decline reasons?"**
+# MAGIC    * Queries v_top_decline_reasons, limits to 5
+# MAGIC
+# MAGIC 10. **"Show me high severity decline reasons"**
+# MAGIC     * Filters v_top_decline_reasons where severity = 'High'
+# MAGIC
+# MAGIC 11. **"Which decline reasons are actionable?"**
+# MAGIC     * Filters v_top_decline_reasons where is_actionable = true
+# MAGIC
+# MAGIC 12. **"What's causing the most revenue loss?"**
+# MAGIC     * Joins decline reasons with transaction values
+# MAGIC
+# MAGIC ### Smart Retry Questions
+# MAGIC
+# MAGIC 13. **"How many transactions should we retry immediately?"**
+# MAGIC     * Counts retry_action = 'RETRY_NOW' from smart_retry_recommendations
+# MAGIC
+# MAGIC 14. **"What's the average retry success probability?"**
+# MAGIC     * Returns avg_retry_success_prob_pct from transaction_approval_performance_smart_retry
+# MAGIC
+# MAGIC 15. **"Show me retry recommendations for insufficient funds declines"**
+# MAGIC     * Filters smart_retry_recommendations where reason_code = '51_INSUFFICIENT_FUNDS'
+# MAGIC
+# MAGIC 16. **"What's the estimated revenue recovery from smart retry?"**
+# MAGIC     * Calculates based on retry_success_probability and transaction amounts
+# MAGIC
+# MAGIC ### Geographic & Segmentation Questions
+# MAGIC
+# MAGIC 17. **"Which countries have the lowest approval rates?"**
+# MAGIC     * Queries v_performance_by_geography, orders by approval_rate_pct ASC
+# MAGIC
+# MAGIC 18. **"Show me performance by transaction channel"**
+# MAGIC     * Returns data from v_solution_performance_by_channel
+# MAGIC
+# MAGIC 19. **"Which card networks have the best approval rates?"**
+# MAGIC     * Queries v_solution_performance_by_issuer
+# MAGIC
+# MAGIC 20. **"Compare ecommerce vs mobile approval rates"**
+# MAGIC     * Filters and compares channel performance
 
 # COMMAND ----------
 
@@ -875,8 +929,34 @@ st.markdown("""
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC -- Query 1: Executive Summary KPIs (for dashboard cards)
+# MAGIC SELECT 
+# MAGIC     total_transactions,
+# MAGIC     approval_rate_pct,
+# MAGIC     avg_approval_uplift_pct,
+# MAGIC     approved_value,
+# MAGIC     declined_value,
+# MAGIC     ROUND((declined_value / (approved_value + declined_value)) * 100, 2) as revenue_at_risk_pct
+# MAGIC FROM v_executive_kpis;
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Auto-refresh Logic
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Query 2: Approval Rate Trend (for line chart)
+# MAGIC SELECT 
+# MAGIC     hour,
+# MAGIC     approval_rate_pct,
+# MAGIC     transaction_count,
+# MAGIC     avg_uplift_pct
+# MAGIC FROM v_approval_trends_hourly
+# MAGIC WHERE hour >= CURRENT_TIMESTAMP() - INTERVAL 7 DAYS
+# MAGIC ORDER BY hour;
 
 # COMMAND ----------
 
@@ -887,9 +967,23 @@ if auto_refresh:
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC -- Query 3: Payment Solution Performance (for bar chart)
+# MAGIC SELECT 
+# MAGIC     solution_mix,
+# MAGIC     transaction_count,
+# MAGIC     actual_approval_pct,
+# MAGIC     avg_uplift_pct,
+# MAGIC     avg_cost_usd,
+# MAGIC     ROUND((actual_approval_pct - avg_cost_usd) * transaction_count, 2) as net_value_score
+# MAGIC FROM v_smart_checkout_solution_performance
+# MAGIC ORDER BY actual_approval_pct DESC;
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Summary
-# MAGIC 
+# MAGIC
 # MAGIC ✅ **Databricks App Complete**:
 # MAGIC - Real-time KPI dashboard with 5 key metrics
 # MAGIC - Live transaction stream with filtering and Sankey flow visualization
@@ -900,25 +994,79 @@ if auto_refresh:
 # MAGIC - Smart Retry recommendations with success probability tracking
 # MAGIC - Risk vs approval matrix visualization
 # MAGIC - What-if analysis for policy simulation
-# MAGIC 
+# MAGIC
 # MAGIC **Interactive Features**:
 # MAGIC - Auto-refresh every 10 seconds
 # MAGIC - Policy threshold controls (approval probability, risk, cost)
 # MAGIC - Transaction filtering by status, channel, and network
 # MAGIC - Expandable insights and data tables
 # MAGIC - Multiple visualization types (bar, line, pie, scatter, Sankey)
-# MAGIC 
+# MAGIC
 # MAGIC **Target Users**:
 # MAGIC - **Executives**: High-level KPIs and strategic insights
 # MAGIC - **Payment Operations**: Real-time monitoring and alerts
 # MAGIC - **Product Managers**: Solution performance and optimization
 # MAGIC - **Risk Teams**: Risk metrics and compliance monitoring
-# MAGIC 
+# MAGIC
 # MAGIC **Usage**:
 # MAGIC - Deploy as Databricks App for web access
 # MAGIC - Share with stakeholders via URL
 # MAGIC - Can be embedded in dashboards or portals
 # MAGIC - Supports role-based access control
-# MAGIC 
+# MAGIC
 # MAGIC **Next Steps**:
 # MAGIC - README documentation with business story and deployment guide
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Query 4: Geographic Performance (for map/heatmap)
+# MAGIC SELECT 
+# MAGIC     geography,
+# MAGIC     approval_rate_pct,
+# MAGIC     transaction_count,
+# MAGIC     avg_uplift_pct,
+# MAGIC     total_transaction_value,
+# MAGIC     avg_country_risk
+# MAGIC FROM v_performance_by_geography
+# MAGIC ORDER BY transaction_count DESC;
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+

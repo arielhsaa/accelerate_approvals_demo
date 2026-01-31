@@ -1,14 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 02 - Stream Enrichment & Smart Checkout Decisioning
-# MAGIC 
+# MAGIC
 # MAGIC ## Overview
 # MAGIC This notebook implements:
 # MAGIC - **Silver Layer**: Enriched streaming transactions with features
 # MAGIC - **Smart Checkout Engine**: Dynamic payment solution selection
 # MAGIC - **Cascading Logic**: Fallback routing on declines
 # MAGIC - **Real-time Decision Streaming**: Sub-second latency processing
-# MAGIC 
+# MAGIC
 # MAGIC ## Business Goal
 # MAGIC Maximize authorization approval rates by intelligently selecting the optimal payment solution mix for each transaction.
 
@@ -19,6 +19,7 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 3
 from pyspark.sql import functions as F
 from pyspark.sql.types import *
 from pyspark.sql.window import Window
@@ -39,6 +40,7 @@ import mlflow.spark
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 6
 CATALOG = "payments_lakehouse"
 SCHEMA_BRONZE = "bronze"
 SCHEMA_SILVER = "silver"
@@ -46,10 +48,11 @@ SCHEMA_GOLD = "gold"
 
 spark.sql(f"USE CATALOG {CATALOG}")
 
-CHECKPOINT_PATH = "/dbfs/payments_demo/checkpoints"
+# Checkpoint path must include schema: /Volumes/<catalog>/<schema>/<volume>/path
+CHECKPOINT_PATH = f"/Volumes/{CATALOG}/{SCHEMA_BRONZE}/payments_demo/checkpoints"
 
 # Load routing policies
-with open("/dbfs/payments_demo/config/routing_policies.json", "r") as f:
+with open(f"/Volumes/{CATALOG}/{SCHEMA_BRONZE}/payments_demo/config/routing_policies.json", "r") as f:
     ROUTING_POLICIES = json.load(f)
 
 print("✅ Configuration loaded")
@@ -144,6 +147,7 @@ print("✅ Loaded streaming and dimension tables")
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 12
 # Join with cardholder dimension
 df_enriched = df_transactions_stream.join(
     df_cardholders,
@@ -158,14 +162,16 @@ df_enriched = df_enriched.join(
     on="merchant_id",
     how="left"
 ).withColumnRenamed("risk_score", "merchant_risk_score") \
- .withColumnRenamed("country", "merchant_country_detail")
+ .withColumnRenamed("country", "merchant_country_detail") \
+ .drop(df_merchants.mcc)
 
-# Join with external risk signals
+# Join with external risk signals and drop duplicate columns
 df_enriched = df_enriched.join(
     F.broadcast(df_risk_signals),
     (df_enriched.cardholder_country == df_risk_signals.country),
     how="left"
-).withColumnRenamed("combined_risk_score", "external_combined_risk_score")
+).withColumnRenamed("combined_risk_score", "external_combined_risk_score") \
+ .drop(df_risk_signals.timestamp)
 
 print("✅ Enriched stream with dimension data")
 
@@ -262,6 +268,7 @@ print(f"   Sample combinations: {[c[0] for c in SOLUTION_COMBINATIONS[:10]]}")
 
 # COMMAND ----------
 
+# DBTITLE 1,Untitled
 def score_solution_combination(solution_list, risk_score, card_network, channel, mcc, geography):
     """
     Score a payment solution combination for approval uplift and risk reduction.
@@ -519,7 +526,7 @@ query_silver = df_silver.writeStream \
     .format("delta") \
     .outputMode("append") \
     .option("checkpointLocation", f"{CHECKPOINT_PATH}/payments_enriched_stream") \
-    .trigger(processingTime="5 seconds") \
+    .trigger(availableNow=True) \
     .toTable(f"{CATALOG}.{SCHEMA_SILVER}.payments_enriched_stream")
 
 print("✅ Streaming to Silver layer started")
@@ -683,25 +690,25 @@ display(df_uplift_by_merchant)
 
 # MAGIC %md
 # MAGIC ## Summary
-# MAGIC 
+# MAGIC
 # MAGIC ✅ **Silver Layer Complete**:
 # MAGIC - Real-time stream enrichment with cardholder, merchant, and external risk data
 # MAGIC - Advanced feature engineering (velocity, behavioral, temporal)
 # MAGIC - Smart Checkout decision engine with 50+ solution combinations
 # MAGIC - Dynamic solution selection based on risk, geography, and issuer preferences
 # MAGIC - Cascading path generation for fallback routing
-# MAGIC 
+# MAGIC
 # MAGIC ✅ **Smart Checkout Engine**:
 # MAGIC - Scores each payment solution combination for approval uplift and risk reduction
 # MAGIC - Applies business rules (mandatory 3DS in EU, high-risk MCC handling)
 # MAGIC - Optimizes for approval rate while controlling risk and cost
 # MAGIC - Provides alternative routing paths for cascading
-# MAGIC 
+# MAGIC
 # MAGIC **Key Metrics**:
 # MAGIC - Average approval uplift: Varies by solution (see analytics above)
 # MAGIC - Risk reduction: Up to 45% with Antifraud combinations
 # MAGIC - Decision latency: Sub-second with Structured Streaming
-# MAGIC 
+# MAGIC
 # MAGIC **Next Steps**:
 # MAGIC - Notebook 03: Reason Code Performance analytics
 # MAGIC - Notebook 04: Smart Retry module with ML-based retry recommendations

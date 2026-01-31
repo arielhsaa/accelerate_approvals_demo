@@ -1,14 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 01 - Synthetic Data Ingestion for Payment Authorization Demo
-# MAGIC 
+# MAGIC
 # MAGIC ## Overview
 # MAGIC This notebook generates synthetic streaming data for card payment transactions with:
 # MAGIC - **transactions_raw**: Authorization attempts with payment solution flags
 # MAGIC - **cardholders_dim**: Customer dimension with KYC and risk profiles
 # MAGIC - **merchants_dim**: Merchant dimension with MCC, geo, and risk data
 # MAGIC - **external_risk_signals**: Streaming Moody's-style macro/sector risk scores
-# MAGIC 
+# MAGIC
 # MAGIC ## Architecture
 # MAGIC - Bronze layer: Raw streaming ingestion
 # MAGIC - Delta Lake format with time travel
@@ -66,7 +66,7 @@ print(f"✅ Gold Schema: {SCHEMA_GOLD}")
 
 # MAGIC %md
 # MAGIC ## Dimension Data Generation
-# MAGIC 
+# MAGIC
 # MAGIC ### Cardholders Dimension
 
 # COMMAND ----------
@@ -295,11 +295,12 @@ display(df_risk_signals)
 
 # MAGIC %md
 # MAGIC ## Streaming Transaction Data Generation
-# MAGIC 
+# MAGIC
 # MAGIC This simulates a Kafka/Event Hubs source with real-time transaction authorization attempts.
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 13
 def generate_transaction_stream_batch(batch_id, num_transactions=1000):
     """Generate a batch of synthetic transaction authorization attempts"""
     
@@ -385,7 +386,7 @@ def generate_transaction_stream_batch(batch_id, num_transactions=1000):
             # Weight decline codes realistically
             reason_code = random.choices(
                 [rc for rc in reason_codes if rc != "00_APPROVED"],
-                weights=[25, 5, 15, 5, 10, 10, 8, 12, 5, 5],
+                weights=[25, 5, 15, 5, 10, 10, 8, 12, 5, 5, 5],
                 k=1
             )[0]
         
@@ -435,7 +436,7 @@ display(df_test_batch)
 
 # MAGIC %md
 # MAGIC ## Create Streaming Source
-# MAGIC 
+# MAGIC
 # MAGIC We'll use rate source to trigger periodic batch generation, simulating a Kafka stream.
 
 # COMMAND ----------
@@ -480,7 +481,7 @@ def process_transaction_batch(batch_df, batch_id):
 streaming_query = rate_stream.writeStream \
     .foreachBatch(process_transaction_batch) \
     .option("checkpointLocation", f"{CHECKPOINT_PATH}/transactions_raw") \
-    .trigger(processingTime="10 seconds") \
+    .trigger(availableNow=True) \
     .start()
 
 print("✅ Streaming ingestion started")
@@ -624,20 +625,20 @@ display(df_decline_reasons)
 
 # MAGIC %md
 # MAGIC ## Summary
-# MAGIC 
+# MAGIC
 # MAGIC ✅ **Bronze Layer Complete**:
 # MAGIC - Cardholder dimension with 100K customers
 # MAGIC - Merchant dimension with 50K merchants
 # MAGIC - External risk signals (Moody's-style)
 # MAGIC - Streaming transaction data with authorization attempts
-# MAGIC 
+# MAGIC
 # MAGIC **Key Features**:
 # MAGIC - Payment solution flags (3DS, Antifraud, IDPay, DataShareOnly, NetworkToken, Passkey)
 # MAGIC - Realistic decline reason codes
 # MAGIC - Risk scoring at cardholder, merchant, and transaction level
 # MAGIC - Cross-border transaction detection
 # MAGIC - Retry and recurring payment flags
-# MAGIC 
+# MAGIC
 # MAGIC **Next Steps**:
 # MAGIC - Notebook 02: Stream enrichment and Smart Checkout decisioning
 # MAGIC - Notebook 03: Reason Code Performance analytics

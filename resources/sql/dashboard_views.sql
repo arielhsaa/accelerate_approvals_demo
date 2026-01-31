@@ -65,16 +65,16 @@ ORDER BY roi_ratio DESC;
 -- View: Decline recovery opportunities
 CREATE OR REPLACE VIEW v_decline_recovery_opportunities AS
 SELECT 
-    reason_code,
+    txn.reason_code,
     rc.description,
     COUNT(*) as decline_count,
     ROUND(AVG(amount), 2) as avg_amount_usd,
     ROUND(SUM(amount), 2) as total_declined_value_usd,
     -- Estimated recoverable based on reason code type
     CASE 
-        WHEN reason_code IN ('51_INSUFFICIENT_FUNDS', '91_ISSUER_UNAVAILABLE') THEN 'High (50-70%)'
-        WHEN reason_code IN ('05_DO_NOT_HONOR', '61_EXCEEDS_LIMIT', '65_EXCEEDS_FREQUENCY') THEN 'Medium (30-50%)'
-        WHEN reason_code IN ('63_SECURITY_VIOLATION', '57_FUNCTION_NOT_PERMITTED') THEN 'Low (10-30%)'
+        WHEN txn.reason_code IN ('51_INSUFFICIENT_FUNDS', '91_ISSUER_UNAVAILABLE') THEN 'High (50-70%)'
+        WHEN txn.reason_code IN ('05_DO_NOT_HONOR', '61_EXCEEDS_LIMIT', '65_EXCEEDS_FREQUENCY') THEN 'Medium (30-50%)'
+        WHEN txn.reason_code IN ('63_SECURITY_VIOLATION', '57_FUNCTION_NOT_PERMITTED') THEN 'Low (10-30%)'
         ELSE 'Very Low (<10%)'
     END as recovery_potential,
     rc.is_actionable,
@@ -83,5 +83,5 @@ FROM payments_lakehouse.silver.payments_enriched_stream txn
 JOIN payments_lakehouse.bronze.reason_code_dim rc ON txn.reason_code = rc.reason_code
 WHERE NOT txn.is_approved
     AND txn.timestamp >= CURRENT_TIMESTAMP() - INTERVAL 7 DAYS
-GROUP BY reason_code, rc.description, rc.is_actionable, rc.recommended_actions
+GROUP BY txn.reason_code, rc.description, rc.is_actionable, rc.recommended_actions
 ORDER BY decline_count DESC;
