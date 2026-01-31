@@ -128,6 +128,7 @@ SELECT * FROM payments_lakehouse.gold.dashboard_sector_risk_hourly;
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Cell 9
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_high_risk_industries AS
 SELECT 
   m.mcc_description AS merchant_sector,
@@ -144,7 +145,7 @@ SELECT
   AVG(t.amount) AS avg_transaction_size,
   -- Risk factors
   AVG(CASE WHEN t.is_cross_border THEN 1 ELSE 0 END) * 100 AS pct_cross_border,
-  AVG(CASE WHEN t.is_high_value THEN 1 ELSE 0 END) * 100 AS pct_high_value,
+  AVG(CASE WHEN t.is_high_value = 1 THEN 1 ELSE 0 END) * 100 AS pct_high_value,
   -- Recommended solutions
   SUM(CASE WHEN t.recommended_solution_name LIKE '%3DS%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_3ds,
   SUM(CASE WHEN t.recommended_solution_name LIKE '%Antifraud%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_antifraud
@@ -244,6 +245,7 @@ SELECT * FROM payments_lakehouse.gold.dashboard_risk_mitigation;
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Cell 15
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_external_risk_impact AS
 SELECT 
   m.mcc_description AS merchant_sector,
@@ -251,7 +253,7 @@ SELECT
   -- External risk factors (from joined table)
   AVG(t.sector_risk_score) AS avg_sector_risk,
   AVG(t.country_risk_score) AS avg_country_risk,
-  AVG(t.aml_risk_level) AS avg_aml_risk,
+  SUM(CASE WHEN t.aml_risk_level = 'HIGH' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_high_aml_risk,
   -- Transaction outcomes
   COUNT(*) AS transaction_count,
   AVG(t.composite_risk_score) AS avg_combined_risk_score,
@@ -272,7 +274,7 @@ ORDER BY avg_combined_risk_score DESC;
 -- Y-axis: decline_rate
 -- Size: transaction_count
 -- Color: merchant_sector
--- Tooltip: geography, avg_aml_risk, total_volume
+-- Tooltip: geography, pct_high_aml_risk, total_volume
 
 SELECT * FROM payments_lakehouse.gold.dashboard_external_risk_impact;
 
