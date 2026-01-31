@@ -1,9 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Advanced Payment Authorization Command Center
-# MAGIC 
+# MAGIC
 # MAGIC ## Professional Databricks App with Dashboards & Genie Integration
-# MAGIC 
+# MAGIC
 # MAGIC **Features:**
 # MAGIC - 📊 Multi-page dashboard interface
 # MAGIC - 🤖 Genie AI integration for natural language queries
@@ -1416,9 +1416,9 @@ if __name__ == "__main__":
 
 # MAGIC %md
 # MAGIC ## Deployment Instructions
-# MAGIC 
+# MAGIC
 # MAGIC To deploy this as a Databricks App:
-# MAGIC 
+# MAGIC
 # MAGIC 1. **Save this notebook** in your Databricks workspace
 # MAGIC 2. **Install required libraries** (first cell with %pip)
 # MAGIC 3. **Configure app settings:**
@@ -1433,5 +1433,5 @@ if __name__ == "__main__":
 # MAGIC    - SELECT on all Gold tables
 # MAGIC    - USAGE on catalog and schemas
 # MAGIC 6. **Deploy and share** the app URL with stakeholders
-# MAGIC 
+# MAGIC
 # MAGIC **App URL format:** `https://<workspace>.databricks.com/apps/<app-id>`
