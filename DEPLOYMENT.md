@@ -16,9 +16,9 @@
     - [ ] Databricks Apps deployment permissions
 
 - [ ] **Configuration Files Uploaded**
-  - [ ] `routing_policies.json` → `dbfs:/payments_demo/config/`
-  - [ ] `retry_policies.json` → `dbfs:/payments_demo/config/`
-  - [ ] `reason_codes.json` → `dbfs:/payments_demo/config/`
+  - [ ] `routing_policies.json` → `/Volumes/{CATALOG}/{SCHEMA_BRONZE}/payments_demo/config/`
+  - [ ] `retry_policies.json` → `/Volumes/{CATALOG}/{SCHEMA_BRONZE}/payments_demo/config/`
+  - [ ] `reason_codes.json` → `/Volumes/{CATALOG}/{SCHEMA_BRONZE}/payments_demo/config/`
 
 ## Deployment Steps
 
@@ -668,7 +668,7 @@ Repeat the same process using `dashboards/03_standard_vs_optimized_approval_rate
 If deployment fails:
 
 1. **Drop catalog**: `DROP CATALOG IF EXISTS payments_lakehouse CASCADE;`
-2. **Delete checkpoint files**: `dbfs rm -r dbfs:/payments_demo/checkpoints/`
+2. **Delete checkpoint files**: `%sh rm -r /Volumes/{CATALOG}/{SCHEMA_BRONZE}:/payments_demo/checkpoints/`
 3. **Delete MLflow experiments**: From MLflow UI
 4. **Undeploy Databricks App**: From Apps UI
 
