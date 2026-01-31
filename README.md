@@ -343,16 +343,26 @@ Upload all notebooks from the `notebooks/` folder to your Databricks workspace:
 
 ```
 /Workspace/Users/<your-email>/accelerate_approvals_demo/
-├── 01_ingest_synthetic_data
-├── 02_stream_enrichment_smart_checkout
-├── 03_reason_code_performance
-├── 04_smart_retry
-├── 05_dashboards_and_genie_examples
-└── 06_app_demo_ui
+├── 00_deployment_setup              (Setup & validation - run first)
+├── 01_ingest_synthetic_data         (Bronze layer)
+├── 02_stream_enrichment_smart_checkout (Silver layer)
+├── 03_reason_code_performance       (Gold layer - Analytics)
+├── 04_smart_retry                   (Gold layer - ML)
+├── 05_dashboards_and_genie_examples (SQL dashboards)
+├── 06_demo_app/
+│   └── 06_app_demo_ui              (Standard Streamlit app)
+└── 07_advanced_app/
+    └── 07_advanced_app_ui          (Advanced multi-page app - RECOMMENDED)
 ```
+
+**Tip:** Run `00_deployment_setup` first for automated environment setup!
 
 #### 2. Upload Configuration Files
 
+**Option A: Automated Setup (Recommended)**
+Run notebook `00_deployment_setup` - it automatically creates catalogs, schemas, and uploads configurations.
+
+**Option B: Manual Setup**
 Upload configuration JSON files to DBFS:
 
 ```bash
@@ -360,7 +370,17 @@ Upload configuration JSON files to DBFS:
 dbfs cp resources/config/routing_policies.json dbfs:/payments_demo/config/
 dbfs cp resources/config/retry_policies.json dbfs:/payments_demo/config/
 dbfs cp resources/config/reason_codes.json dbfs:/payments_demo/config/
+dbfs cp resources/config/policies.json dbfs:/payments_demo/config/
 ```
+
+#### 2a. Deploy Databricks App (Optional)
+
+For the interactive UI, you'll need these files in the root:
+- `app.yaml` - Databricks App configuration
+- `requirements.txt` - Python dependencies
+- Copy either `06_app_demo_ui.py` or `07_advanced_app_ui.py` as `app.py`
+
+See `DEPLOYMENT_STRUCTURE.md` for detailed app deployment instructions.
 
 #### 3. Create Unity Catalog Structure
 
@@ -382,6 +402,12 @@ COMMENT ON CATALOG payments_lakehouse IS
 #### 4. Run Notebooks in Sequence
 
 Execute notebooks in order:
+
+0. **00_deployment_setup** (Optional but recommended): Automated environment setup
+   - Creates Unity Catalog structure
+   - Uploads configuration files
+   - Validates environment
+   - Provides cluster recommendations
 
 1. **01_ingest_synthetic_data**: Generate synthetic data (Bronze layer)
    - Creates `cardholders_dim`, `merchants_dim`, `external_risk_signals`
@@ -407,9 +433,12 @@ Execute notebooks in order:
    - Creates 25+ views for dashboards
    - Provides natural language query examples
 
-6. **06_app_demo_ui**: Deploy Databricks App (optional)
+6. **06_app_demo_ui** or **07_advanced_app_ui**: Deploy Databricks App (optional)
    - Interactive UI for live monitoring
+   - **06_app_demo_ui**: Standard single-page app
+   - **07_advanced_app_ui**: Advanced multi-page app with Genie AI (RECOMMENDED)
    - Deploy as Databricks App for web access
+   - See `DEPLOYMENT_STRUCTURE.md` for deployment instructions
 
 ---
 
@@ -657,6 +686,22 @@ We've proven that higher approval rates and lower risk are not mutually exclusiv
 2. **Databricks Assistant**:
    - Conversational interface for querying transaction data
    - Generate custom dashboards on-the-fly
+
+---
+
+## Additional Documentation
+
+For more detailed information, see:
+
+- **📘 QUICKSTART.md** - Get started in 30 minutes
+- **📘 ARCHITECTURE.md** - Detailed technical architecture and design
+- **📘 DEPLOYMENT.md** - Production deployment checklist and validation
+- **📘 DEPLOYMENT_STRUCTURE.md** - Databricks App deployment file structure guide
+- **📘 DEMO_SCRIPT.md** - Complete 45-minute demo walkthrough
+- **📘 PRESENTATION.md** - Executive presentation content
+- **📘 PRESENTATION_GUIDE.md** - How to present the solution
+- **📘 FILE_INDEX.md** - Complete file navigation guide
+- **📘 PROJECT_SUMMARY.md** - Deliverables and completion checklist
 
 ---
 

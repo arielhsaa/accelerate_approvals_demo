@@ -1,0 +1,225 @@
+# ============================================================================
+# Databricks App Configuration
+# Payment Authorization Command Center
+# ============================================================================
+# Version: 1.0.0
+# Last Updated: 2026-01-31
+# Documentation: https://docs.databricks.com/en/dev-tools/databricks-apps/
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Application Command
+# ----------------------------------------------------------------------------
+# Command to run the Streamlit app
+# IMPORTANT: app.py must be in the same directory as this app.yaml file
+# For Databricks Apps deployment structure:
+#   /Workspace/Users/<user>/app-name/
+#     ├── app.py              (main Streamlit app - required)
+#     ├── app.yaml            (this configuration file - required)
+#     ├── requirements.txt    (Python dependencies - required)
+#     └── .streamlit/         (optional Streamlit config)
+#         └── config.toml
+
+command: 
+  - 'streamlit'
+  - 'run'
+  - 'app.py'
+  - '--server.port=8501'
+  - '--server.address=0.0.0.0'
+  - '--server.headless=true'
+  - '--server.enableCORS=false'
+  - '--server.enableXsrfProtection=false'
+  - '--browser.gatherUsageStats=false'
+
+# ----------------------------------------------------------------------------
+# Environment Variables
+# ----------------------------------------------------------------------------
+env:
+  # Streamlit Configuration
+  - name: 'STREAMLIT_GATHER_USAGE_STATS'
+    value: 'false'
+  - name: 'STREAMLIT_BROWSER_GATHER_USAGE_STATS'
+    value: 'false'
+  - name: 'STREAMLIT_SERVER_HEADLESS'
+    value: 'true'
+  - name: 'STREAMLIT_SERVER_PORT'
+    value: '8501'
+  - name: 'STREAMLIT_SERVER_ENABLE_CORS'
+    value: 'false'
+  - name: 'STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION'
+    value: 'false'
+  
+  # Unity Catalog Configuration
+  - name: 'CATALOG'
+    value: 'payments_lakehouse'
+  - name: 'SCHEMA_BRONZE'
+    value: 'bronze'
+  - name: 'SCHEMA_SILVER'
+    value: 'silver'
+  - name: 'SCHEMA_GOLD'
+    value: 'gold'
+  
+  # Application Settings
+  - name: 'APP_NAME'
+    value: 'Payment Authorization Command Center'
+  - name: 'APP_VERSION'
+    value: '1.0.0'
+  - name: 'LOG_LEVEL'
+    value: 'INFO'
+  
+  # Feature Flags
+  - name: 'ENABLE_GENIE'
+    value: 'true'
+  - name: 'ENABLE_SMART_CHECKOUT'
+    value: 'true'
+  - name: 'ENABLE_SMART_RETRY'
+    value: 'true'
+  - name: 'ENABLE_REASON_CODE_ANALYTICS'
+    value: 'true'
+  
+  # Data Refresh Settings (seconds)
+  - name: 'DATA_REFRESH_INTERVAL'
+    value: '60'
+  - name: 'CACHE_TTL'
+    value: '300'
+  
+  # Databricks Connection
+  # Note: Authentication handled automatically by Databricks Apps
+  - name: 'DATABRICKS_HOST'
+    value: 'auto'  # Automatically set by Databricks
+  - name: 'DATABRICKS_TOKEN'
+    value: 'auto'  # Automatically set by Databricks
+
+# ----------------------------------------------------------------------------
+# Resource Allocation
+# ----------------------------------------------------------------------------
+# Configure based on expected load and data volume
+resources:
+  limits:
+    memory: "8Gi"      # Maximum memory allocation
+    cpu: "4"           # Maximum CPU cores
+  requests:
+    memory: "4Gi"      # Initial memory reservation
+    cpu: "2"           # Initial CPU cores
+
+# ----------------------------------------------------------------------------
+# Health Check Configuration
+# ----------------------------------------------------------------------------
+# Databricks will monitor app health and restart if unhealthy
+healthCheck:
+  path: "/_stcore/health"           # Streamlit health endpoint
+  port: 8501
+  initialDelaySeconds: 60           # Wait time before first check
+  periodSeconds: 15                 # Check interval
+  timeoutSeconds: 5                 # Check timeout
+  successThreshold: 1               # Consecutive successes needed
+  failureThreshold: 3               # Consecutive failures to restart
+
+# ----------------------------------------------------------------------------
+# Scaling Configuration (Optional)
+# ----------------------------------------------------------------------------
+# Uncomment to enable auto-scaling based on traffic
+# scaling:
+#   minReplicas: 1
+#   maxReplicas: 5
+#   targetCPUUtilizationPercentage: 70
+#   targetMemoryUtilizationPercentage: 80
+
+# ----------------------------------------------------------------------------
+# Network Configuration (Optional)
+# ----------------------------------------------------------------------------
+# Uncomment to customize networking
+# network:
+#   allowedOrigins:
+#     - "https://*.cloud.databricks.com"
+#   allowedMethods:
+#     - "GET"
+#     - "POST"
+#   maxRequestSize: "10MB"
+
+# ----------------------------------------------------------------------------
+# Security Configuration (Optional)
+# ----------------------------------------------------------------------------
+# Uncomment to add security constraints
+# security:
+#   requireAuthentication: true
+#   allowedGroups:
+#     - "payments_team"
+#     - "data_scientists"
+#     - "executives"
+
+# ----------------------------------------------------------------------------
+# Application Metadata
+# ----------------------------------------------------------------------------
+metadata:
+  name: "payment-authorization-command-center"
+  displayName: "Payment Authorization Command Center"
+  description: |
+    Real-time payment authorization analytics platform powered by Databricks Lakehouse.
+    
+    Features:
+    - Smart Checkout: Dynamic payment solution optimization
+    - Decline Analysis: Real-time reason code performance analytics  
+    - Smart Retry: Intelligent retry recommendation engine
+    - Geographic Performance: Cross-border transaction insights
+    - Genie AI: Natural language query interface
+    
+    Built with: Streamlit, PySpark, Delta Lake, MLflow, Databricks SQL
+  version: "1.0.0"
+  author: "Databricks Solutions Team"
+  license: "Databricks License"
+  homepage: "https://github.com/databricks/payment-authorization-demo"
+  
+  tags:
+    - "payments"
+    - "fintech"
+    - "analytics"
+    - "databricks"
+    - "lakehouse"
+    - "streamlit"
+    - "machine-learning"
+    - "real-time"
+    - "smart-routing"
+    - "fraud-detection"
+  
+  categories:
+    - "Financial Services"
+    - "Analytics & BI"
+    - "Machine Learning"
+  
+  # Keywords for search/discovery
+  keywords:
+    - "payment authorization"
+    - "approval rate optimization"
+    - "smart checkout"
+    - "decline analysis"
+    - "smart retry"
+    - "card payments"
+    - "transaction analytics"
+
+# ----------------------------------------------------------------------------
+# Deployment Notes
+# ----------------------------------------------------------------------------
+# Deployment via Databricks CLI:
+#   databricks apps deploy <app-name> \
+#     --source-code-path /Workspace/Users/<user>/<app-name>
+#
+# Deployment via UI:
+#   1. Navigate to Databricks workspace
+#   2. Go to "Apps" section
+#   3. Click "Create App"
+#   4. Select source directory containing app.py, app.yaml, requirements.txt
+#   5. Click "Deploy"
+#
+# Requirements:
+#   - Databricks Runtime 14.3 LTS or higher
+#   - Unity Catalog enabled
+#   - payments_lakehouse catalog with bronze/silver/gold schemas
+#   - Network access to Databricks SQL warehouse
+#
+# Troubleshooting:
+#   - Check app logs in Databricks Apps UI
+#   - Verify Unity Catalog permissions
+#   - Ensure Delta tables exist and are populated
+#   - Validate requirements.txt dependencies
+# ============================================================================

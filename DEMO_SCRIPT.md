@@ -258,10 +258,13 @@ SELECT * FROM payments_lakehouse.gold.v_retry_value_recovery;
 
 ### Show Databricks App
 
-**Screen**: Open Databricks App (Notebook 06 deployed as App)
+**Screen**: Open Databricks App (Notebook 06 or 07 deployed as App)
+- **Option A**: Standard app (`06_app_demo_ui.py`) - single-page dashboard
+- **Option B**: Advanced app (`07_advanced_app_ui.py`) - multi-page with Genie AI ⭐ RECOMMENDED
 
 **Talking Points**:
 - "We've built an interactive Command Center for real-time monitoring and control."
+- (If using advanced app) "Navigate through dedicated pages for different analysis views."
 
 ### Demo Features
 

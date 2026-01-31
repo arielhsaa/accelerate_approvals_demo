@@ -25,26 +25,33 @@ In your Databricks workspace, create a folder:
 /Workspace/Users/<your-email>/accelerate_approvals_demo/
 ```
 
-Upload all 6 notebooks from the `notebooks/` folder:
+Upload all notebooks from the `notebooks/` folder:
+- `00_deployment_setup.py` ⭐ (Run this first for automated setup!)
 - `01_ingest_synthetic_data.py`
 - `02_stream_enrichment_smart_checkout.py`
 - `03_reason_code_performance.py`
 - `04_smart_retry.py`
 - `05_dashboards_and_genie_examples.sql`
-- `06_app_demo_ui.py`
+- `06_demo_app/06_app_demo_ui.py` (Standard app)
+- `07_advanced_app/07_advanced_app_ui.py` (Advanced app - RECOMMENDED)
 
 ### B. Upload Configuration Files
 
+**Option A: Automated (Recommended)**
+Run `00_deployment_setup` notebook - it handles everything automatically!
+
+**Option B: Manual**
 Upload configuration files to DBFS:
 
 ```python
 # Run this in a Databricks notebook cell
 dbutils.fs.mkdirs("dbfs:/payments_demo/config/")
 
-# Then upload the 3 JSON files from resources/config/ to:
+# Then upload the 4 JSON files from resources/config/ to:
 # dbfs:/payments_demo/config/routing_policies.json
 # dbfs:/payments_demo/config/retry_policies.json
 # dbfs:/payments_demo/config/reason_codes.json
+# dbfs:/payments_demo/config/policies.json
 ```
 
 Or use the Databricks UI: Data → DBFS → Upload files
@@ -53,6 +60,10 @@ Or use the Databricks UI: Data → DBFS → Upload files
 
 ## Step 2: Create Catalog (2 minutes)
 
+**Option A: Automated (Recommended)**
+Run the `00_deployment_setup` notebook - it creates everything automatically!
+
+**Option B: Manual**
 Run this SQL in a notebook or SQL editor:
 
 ```sql
@@ -72,6 +83,12 @@ COMMENT ON CATALOG payments_lakehouse IS
 ## Step 3: Run Notebooks (15 minutes)
 
 Execute notebooks **in order**. Attach each notebook to your cluster before running.
+
+### Notebook 00: Deployment Setup (2 min) - OPTIONAL BUT RECOMMENDED
+- Click "Run All"
+- Automatically creates catalog, schemas, uploads configs
+- Validates environment and provides recommendations
+- ✅ Verify: Catalog and schemas created, configs uploaded
 
 ### Notebook 01: Ingest Synthetic Data (3 min)
 - Click "Run All"
@@ -98,6 +115,12 @@ Execute notebooks **in order**. Attach each notebook to your cluster before runn
 ### Notebook 05: Dashboards & Genie Examples (1 min)
 - Click "Run All"
 - Creates SQL views for dashboards
+- ✅ Verify: 25+ views created in Gold schema
+
+### Notebook 06/07: Deploy App (Optional)
+- **06_app_demo_ui**: Standard single-page app
+- **07_advanced_app_ui**: Advanced multi-page app with Genie (RECOMMENDED)
+- See `DEPLOYMENT_STRUCTURE.md` for deployment instructions
 - ✅ Verify: Query a few views (e.g., `SELECT * FROM gold.v_executive_kpis`)
 
 ### Notebook 06: App Demo UI (2 min)

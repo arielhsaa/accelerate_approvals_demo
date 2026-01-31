@@ -8,7 +8,13 @@ This comprehensive Azure Databricks demo showcases an end-to-end payment authori
 
 ## 📦 What's Included
 
-### 📓 Notebooks (6 Total)
+### 📓 Notebooks (8 Total)
+
+0. **00_deployment_setup.py** (Setup & Validation)
+   - Automated environment setup and configuration
+   - Creates Unity Catalog structure
+   - Uploads configuration files to DBFS
+   - Validates environment and provides recommendations
 
 1. **01_ingest_synthetic_data.py** (Bronze Layer)
    - Generates 100K cardholders, 50K merchants, external risk signals
@@ -35,12 +41,18 @@ This comprehensive Azure Databricks demo showcases an end-to-end payment authori
    - Executive KPIs, geographic performance, solution analytics
    - Genie natural language query examples
 
-6. **06_app_demo_ui.py** (Interactive App)
+6. **06_demo_app/06_app_demo_ui.py** (Standard Interactive App)
    - Real-time Command Center with Streamlit
    - Live transaction feed, KPI tiles, visualizations
    - What-if analysis and policy controls
 
-### ⚙️ Configuration Files (3 Total)
+7. **07_advanced_app/07_advanced_app_ui.py** (Advanced Multi-Page App) ⭐ RECOMMENDED
+   - Professional multi-page Streamlit interface
+   - 7 dedicated pages (Executive, Smart Checkout, Decline Analysis, Smart Retry, Geographic, Genie AI, Configuration)
+   - Enhanced visualizations and Genie AI integration
+   - Configuration management interface
+
+### ⚙️ Configuration Files (4 Total)
 
 Located in `resources/config/`:
 
@@ -62,7 +74,27 @@ Located in `resources/config/`:
    - Root causes and recommended actions
    - Analytics segments
 
-### 📄 Documentation (5 Files)
+4. **policies.json** (Master Configuration)
+   - Consolidated policy configuration
+   - Payment solutions, routing, cascading, retry rules
+   - ML model config, monitoring, feature flags
+   - Compliance settings
+
+### 🚀 Deployment Files (Root Directory)
+
+1. **app.yaml** (7.5 KB)
+   - Databricks App configuration
+   - Environment variables, resource limits
+   - Health checks, metadata
+   - Deployment instructions
+
+2. **requirements.txt** (4.7 KB)
+   - Python dependencies (30+ packages)
+   - Streamlit, Plotly, Databricks SDK
+   - ML libraries, data processing tools
+   - Organized by category
+
+### 📄 Documentation (10 Files)
 
 1. **README.md** (32 KB)
    - Executive summary and business context
@@ -80,24 +112,75 @@ Located in `resources/config/`:
    - Security, compliance, and governance
    - Monitoring and disaster recovery
 
-3. **DEPLOYMENT.md** (8 KB)
+3. **DEPLOYMENT.md** (15 KB)
    - Step-by-step deployment checklist
    - Pre-deployment requirements
+   - Databricks App deployment guide (UI & CLI)
+   - Visual dashboard creation guide
    - Post-deployment validation
    - Troubleshooting guide
-   - Rollback procedures
 
-4. **DEMO_SCRIPT.md** (13 KB)
+4. **DEPLOYMENT_STRUCTURE.md** (5.6 KB) 🆕
+   - Databricks App file structure requirements
+   - Current vs. required project structure
+   - Step-by-step deployment instructions
+   - Verification checklist
+   - Troubleshooting common errors
+   - Quick deploy script template
+
+5. **DEMO_SCRIPT.md** (13 KB)
    - Complete 45-minute demo script
    - Act-by-act walkthrough with talking points
    - Screen-by-screen guidance
    - Q&A preparation
    - Post-demo follow-up checklist
 
-5. **ARCHITECTURE.md** (Supplemental SQL)
-   - Additional SQL views for dashboards
-   - Real-time KPI snapshots
-   - Performance vs baseline comparisons
+6. **QUICKSTART.md** (8 KB)
+   - 30-minute setup guide
+   - Prerequisites and cluster setup
+   - Step-by-step notebook execution
+   - Verification checklist
+   - Quick win scenarios
+
+7. **FILE_INDEX.md** (Enhanced)
+   - Complete project navigation guide
+   - File structure with descriptions
+   - Notebook execution order
+   - Configuration file reference
+   - Documentation roadmap
+
+8. **PROJECT_SUMMARY.md** (Updated)
+   - Deliverables checklist
+   - Component inventory
+   - Features summary
+   - Success metrics
+
+9. **PRESENTATION.md**
+   - Executive presentation content
+   - Slide-by-slide outline
+   - Key talking points
+
+10. **PRESENTATION_GUIDE.md**
+    - How to present the solution
+    - Audience-specific approaches
+    - Demo best practices
+
+### 📊 Dashboard Definitions (3 SQL Files) 🆕
+
+1. **dashboards/01_risk_scoring_by_sector.sql**
+   - 8 SQL views for risk analytics
+   - Sector/industry risk scoring
+   - Risk heatmaps and trends
+
+2. **dashboards/02_transactions_by_country.sql**
+   - 9 SQL views for geographic analytics
+   - Global transaction maps
+   - Cross-border flow analysis
+
+3. **dashboards/03_standard_vs_optimized_approval_rates.sql**
+   - 9 SQL views for approval comparison
+   - KPI cards and uplift metrics
+   - Revenue impact analysis
 
 ### 📁 Project Structure
 

@@ -3,35 +3,109 @@
 ## Project Structure
 
 ```
-accelerate_approvals_demo/zcr/
+accelerate_approvals_demo/
 │
 ├── 📘 QUICKSTART.md                    ⭐ START HERE - 30-minute setup guide
 ├── 📘 README.md                        📖 Complete business story & architecture overview
 ├── 📘 PROJECT_SUMMARY.md               ✅ Deliverables checklist & completion status
 ├── 📘 ARCHITECTURE.md                  🏗️ Detailed technical architecture & data flows
 ├── 📘 DEPLOYMENT.md                    🚀 Production deployment checklist & validation
+├── 📘 DEPLOYMENT_STRUCTURE.md          📦 Databricks App deployment file structure guide
 ├── 📘 DEMO_SCRIPT.md                   🎤 45-minute demo script with talking points
+├── 📘 PRESENTATION.md                  🎯 Executive presentation content
+├── 📘 PRESENTATION_GUIDE.md            🗣️ How to present the solution
+├── 📘 FILE_INDEX.md                    📁 This file - navigation guide
 ├── 📘 LICENSE                          📜 Project license
 │
-├── 📂 notebooks/                       💻 Databricks notebooks (6 total)
+├── 🔧 app.yaml                         ⚙️ Databricks App configuration (ROOT)
+├── 🔧 requirements.txt                 📦 Python dependencies (ROOT)
+│
+├── 📂 notebooks/                       💻 Databricks notebooks & apps
+│   ├── 00_deployment_setup.py                         [Setup & Validation]
 │   ├── 01_ingest_synthetic_data.py                    [Bronze Layer]
 │   ├── 02_stream_enrichment_smart_checkout.py         [Silver Layer]
 │   ├── 03_reason_code_performance.py                  [Gold - Analytics]
 │   ├── 04_smart_retry.py                              [Gold - ML]
 │   ├── 05_dashboards_and_genie_examples.sql           [Dashboards]
-│   └── 06_app_demo_ui.py                              [Interactive App]
+│   ├── 📂 06_demo_app/
+│   │   └── 06_app_demo_ui.py                          [Standard Interactive App]
+│   └── 📂 07_advanced_app/
+│       └── 07_advanced_app_ui.py                      [Advanced Multi-page App] ⭐ RECOMMENDED
+│
+├── 📂 dashboards/                      📊 Databricks SQL dashboard definitions
+│   ├── 01_risk_scoring_by_sector.sql                  [Risk & Sector Analytics]
+│   ├── 02_transactions_by_country.sql                 [Geographic Analytics]
+│   └── 03_standard_vs_optimized_approval_rates.sql    [Approval Rate Comparison]
 │
 ├── 📂 resources/                       ⚙️ Configuration & SQL resources
 │   ├── 📂 config/                      🔧 JSON configuration files
 │   │   ├── routing_policies.json                      [Smart Checkout config]
 │   │   ├── retry_policies.json                        [Smart Retry config]
-│   │   └── reason_codes.json                          [Reason code taxonomy]
-│   └── 📂 sql/                         📊 SQL views for dashboards
-│       └── dashboard_views.sql                        [Additional SQL views]
+│   │   ├── reason_codes.json                          [Reason code taxonomy]
+│   │   └── policies.json                              [Master policy config]
+│   ├── 📂 sql/                         📊 SQL views for dashboards
+│   │   └── dashboard_views.sql                        [Additional SQL views]
+│   └── 📂 app_settings/                🎨 Legacy app config (deprecated)
+│       ├── app.yaml                                   [Use root app.yaml instead]
+│       └── requirements.txt                           [Use root requirements.txt instead]
+│
+├── 📂 .cursor/                         🔧 Cursor IDE configuration
+│   ├── packages.json                                  [Project metadata]
+│   ├── app.yaml                                       [Deprecated - use root]
+│   └── requirements.txt                               [Deprecated - use root]
 │
 └── 📂 data/                            💾 Generated at runtime
     └── (synthetic data created when notebooks run)
 ```
+
+---
+
+## 🚀 Deployment Files (Root Directory)
+
+### app.yaml ⚙️
+**Location:** `/app.yaml` (root directory)  
+**Purpose:** Databricks App configuration file  
+**When to use:** Required for deploying Streamlit apps to Databricks  
+
+**Key sections:**
+- Command configuration for Streamlit
+- Environment variables (catalog names, feature flags)
+- Resource allocation (CPU, memory)
+- Health check settings
+- App metadata and tags
+
+**Important notes:**
+- Must be in same directory as `app.py` and `requirements.txt`
+- Contains comprehensive environment configuration
+- See `DEPLOYMENT_STRUCTURE.md` for deployment instructions
+
+### requirements.txt 📦
+**Location:** `/requirements.txt` (root directory)  
+**Purpose:** Python package dependencies for Databricks App  
+**When to use:** Required for all Databricks App deployments  
+
+**Includes:**
+- Streamlit framework and extensions
+- Data processing libraries (pandas, numpy)
+- Databricks connectors (SQL, SDK)
+- Visualization libraries (plotly, altair, matplotlib)
+- ML libraries (scikit-learn, mlflow)
+- Configuration parsers (PyYAML)
+
+**Installation:**
+```bash
+# Local development
+pip install -r requirements.txt
+
+# Databricks automatically installs from this file during deployment
+```
+
+### ⚠️ Legacy Files (Deprecated)
+These files exist for backward compatibility but should NOT be used:
+- `.cursor/app.yaml` → Use `/app.yaml` instead
+- `.cursor/requirements.txt` → Use `/requirements.txt` instead  
+- `resources/app_settings/app.yaml` → Use `/app.yaml` instead
+- `resources/app_settings/requirements.txt` → Use `/requirements.txt` instead
 
 ---
 
@@ -62,14 +136,34 @@ accelerate_approvals_demo/zcr/
 
 | # | Notebook | Layer | Purpose | Time | Output |
 |---|----------|-------|---------|------|--------|
+| 0 | `00_deployment_setup.py` | Setup | Create catalogs, schemas, configs | 2 min | Unity Catalog structure, config files |
 | 1 | `01_ingest_synthetic_data.py` | Bronze | Generate synthetic transaction data | 3 min | 100K cardholders, 50K merchants, 5K-10K transactions |
 | 2 | `02_stream_enrichment_smart_checkout.py` | Silver | Enrich transactions & apply Smart Checkout | 3 min | `payments_enriched_stream` with solution recommendations |
 | 3 | `03_reason_code_performance.py` | Gold | Analyze declines & generate insights | 2 min | 10+ Gold tables with decline analytics |
 | 4 | `04_smart_retry.py` | Gold | Train ML model & generate retry recommendations | 4 min | ML model + `smart_retry_recommendations` table |
 | 5 | `05_dashboards_and_genie_examples.sql` | Gold | Create SQL views for dashboards | 1 min | 25+ SQL views |
-| 6 | `06_app_demo_ui.py` | App | Deploy interactive Command Center | 2 min | Databricks App URL |
+| 6a | `06_demo_app/06_app_demo_ui.py` | App | Deploy standard interactive app | 2 min | Databricks App URL |
+| 6b | `07_advanced_app/07_advanced_app_ui.py` | App | Deploy advanced multi-page app ⭐ | 2 min | Databricks App URL |
 
 ### Notebook Details
+
+#### 00_deployment_setup.py 🆕
+**What it does:**
+- Creates Unity Catalog structure (catalog + schemas)
+- Sets up DBFS directories for data and configs
+- Generates and uploads configuration JSON files
+- Configures MLflow experiment tracking
+- Validates environment and provides cluster recommendations
+
+**Key outputs:**
+- `payments_lakehouse` catalog with bronze/silver/gold schemas
+- Configuration files in DBFS
+- MLflow experiment setup
+- Environment validation report
+
+**When to use:** Run first before any other notebooks. One-time setup.
+
+---
 
 #### 01_ingest_synthetic_data.py
 **What it does:**
@@ -155,7 +249,7 @@ accelerate_approvals_demo/zcr/
 
 ---
 
-#### 06_app_demo_ui.py
+#### 06_app_demo_ui.py (Standard App)
 **What it does:**
 - Deploys interactive Databricks App with Streamlit
 - Real-time KPI dashboard with 5 key metrics
@@ -164,10 +258,129 @@ accelerate_approvals_demo/zcr/
 - What-if analysis with policy threshold controls
 - Auto-refresh capability (10-second intervals)
 
+**Key features:**
+- Single-page dashboard layout
+- Real-time data refresh
+- Geographic heatmap
+- Solution mix analyzer
+- Decline trend analysis
+- What-if scenario modeling
+
 **Key outputs:**
 - Databricks App URL (accessible via web browser)
 
 **When to use:** After Notebook 05. Provides interactive UI for live monitoring.
+
+**Deployment:** See `DEPLOYMENT_STRUCTURE.md` for instructions on copying to root as `app.py`
+
+---
+
+#### 07_advanced_app_ui.py (Advanced Multi-Page App) ⭐ RECOMMENDED
+**What it does:**
+- Professional multi-page Streamlit app with enhanced UI
+- Sidebar navigation with 7 dedicated pages
+- Advanced visualizations with Plotly and custom CSS
+- Genie AI integration for natural language queries
+- Configuration management interface
+- Enhanced filtering and real-time updates
+
+**Pages:**
+1. **🏠 Executive Dashboard** - High-level KPIs and trends
+2. **🎯 Smart Checkout** - Solution optimization and A/B testing
+3. **📉 Decline Analysis** - Issuer heatmaps and actionable insights
+4. **🔄 Smart Retry** - Retry recommendation engine with ROI calculator
+5. **🌍 Geographic Performance** - Global transaction map and regional analysis
+6. **🤖 Genie AI Assistant** - Natural language query interface with example prompts
+7. **⚙️ Configuration** - Policy management and threshold adjustments
+
+**Key features:**
+- Professional UI with custom CSS styling
+- Multi-page navigation via sidebar
+- Enhanced data visualization (Plotly choropleth maps, sunburst charts)
+- Genie AI integration for natural language analytics
+- Real-time KPI cards with trend indicators
+- Interactive filters (date range, geography, channel, risk level)
+- Configuration management panel
+- Mobile-responsive design
+
+**Key outputs:**
+- Databricks App URL with multi-page interface
+
+**When to use:** After Notebook 05. **Recommended over standard app** for full feature set.
+
+**Deployment:** See `DEPLOYMENT_STRUCTURE.md` for instructions on copying to root as `app.py`
+
+**Advantages over 06_app_demo_ui.py:**
+- ✅ Multi-page navigation vs single page
+- ✅ Genie AI integration
+- ✅ Professional UI/UX design
+- ✅ Configuration management interface
+- ✅ Enhanced visualizations
+- ✅ Better mobile responsiveness
+- ✅ More comprehensive analytics
+
+---
+
+## 📊 Databricks SQL Dashboards (3 Visual Dashboards)
+
+### 01_risk_scoring_by_sector.sql
+**What it creates:**
+- 8 SQL views for risk analytics by merchant sector/industry
+- Visual dashboard with bar charts, heatmaps, and trend lines
+
+**Key views:**
+- Risk overview by sector/category
+- Risk distribution analysis
+- Hourly risk heatmaps
+- High-risk spotlight tables
+- Risk trend analysis (7-day)
+- Mitigation effectiveness metrics
+- External risk signal impact
+- Risk vs. approval rate correlation
+
+**When to use:** Create visual dashboard in Databricks SQL Workspace
+
+---
+
+### 02_transactions_by_country.sql
+**What it creates:**
+- 9 SQL views for geographic transaction analysis
+- Visual dashboard with choropleth maps and regional breakdowns
+
+**Key views:**
+- Global transaction volume map
+- Top countries by volume/approval rate
+- Daily transaction trends by country
+- Cross-border flow analysis (Sankey diagram)
+- Regional performance comparison
+- Transaction volume by channel and country
+- Country rank over time
+- Hourly pattern heatmap by country
+- Country performance scorecard
+
+**When to use:** Create visual dashboard in Databricks SQL Workspace
+
+---
+
+### 03_standard_vs_optimized_approval_rates.sql
+**What it creates:**
+- 9 SQL views comparing baseline vs. optimized approval performance
+- Visual dashboard with KPI cards, comparison bars, and uplift metrics
+
+**Key views:**
+- Overall approval rate comparison (KPI cards)
+- Segmented uplift by geography/channel/issuer
+- Solution mix performance comparison
+- Time series approval rate trends
+- Revenue impact and incremental value
+- Geographic uplift heatmap
+- Cascading effectiveness analysis
+- Retry impact on approval rates
+- A/B test results (control vs. optimized)
+
+**When to use:** Create visual dashboard in Databricks SQL Workspace
+
+**Deployment:** See `DEPLOYMENT.md` Section 8 for step-by-step dashboard creation guide
 
 ---
 
