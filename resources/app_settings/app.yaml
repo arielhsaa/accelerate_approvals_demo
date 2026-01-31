@@ -2,8 +2,8 @@
 # Payment Authorization Command Center
 
 # Command to run the Streamlit app
-# Update the path to match your notebook location
-command: ['streamlit', 'run', 'notebooks/07_advanced_app_ui.py', '--server.port=8501', '--server.address=0.0.0.0']
+# Path must be relative to the app directory (app.py in the same folder as app.yaml)
+command: ['streamlit', 'run', 'app.py', '--server.port=8501', '--server.address=0.0.0.0']
 
 # Environment variables
 env:
