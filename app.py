@@ -1,28 +1,3 @@
-# Databricks notebook source
-# MAGIC %md
-# MAGIC # 🌍 Payment Authorization Command Center - Premium Edition
-# MAGIC
-# MAGIC ## Enterprise-Grade Databricks App with Advanced Geo-Analytics
-# MAGIC
-# MAGIC **Enhanced Features:**
-# MAGIC - 🗺️ Interactive geo-location dashboards with choropleth maps
-# MAGIC - 📊 8-page professional navigation system  
-# MAGIC - 🤖 Genie AI integration for natural language queries
-# MAGIC - 📈 Real-time streaming data visualization
-# MAGIC - 🎯 Advanced Smart Checkout analytics
-# MAGIC - 📉 Deep-dive decline analysis with heat maps
-# MAGIC - 🔄 ML-powered Smart Retry recommendations
-# MAGIC - 🌐 Country-level performance drill-downs
-# MAGIC - 🎨 Modern, responsive UI with dark theme
-# MAGIC - ⚡ High-performance data caching
-
-# COMMAND ----------
-
-# MAGIC %pip install streamlit==1.29.0 plotly==5.18.0 streamlit-extras==0.3.6 streamlit-option-menu==0.3.6 pydeck==0.8.1b0 databricks-sql-connector==3.0.2
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -47,12 +22,8 @@ st.set_page_config(
     }
 )
 
-# COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Enhanced Styling & Theme
 
-# COMMAND ----------
 
 # Premium CSS with enhanced styling
 st.markdown("""
@@ -481,12 +452,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Data Loading Functions with Caching
 
-# COMMAND ----------
 
 @st.cache_data(ttl=300)  # Cache for 5 minutes
 def load_data_from_delta(table_name, limit=10000):
@@ -597,12 +564,8 @@ def generate_synthetic_data(table_type):
             'value': np.random.randn(100)
         })
 
-# COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Premium Header Component
 
-# COMMAND ----------
 
 def show_premium_header():
     """Display premium header with live status"""
@@ -629,12 +592,8 @@ def show_premium_header():
     </div>
     """, unsafe_allow_html=True)
 
-# COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Main Navigation
 
-# COMMAND ----------
 
 def main():
     """Main application with enhanced navigation"""
@@ -716,12 +675,8 @@ def main():
     elif selected == "⚙️ Settings & Config":
         show_settings()
 
-# COMMAND ----------
 
-# MAGIC %md  
-# MAGIC ## Page 1: Executive Dashboard
 
-# COMMAND ----------
 
 def show_executive_dashboard(checkout_data, decline_data, retry_data):
     """Premium executive dashboard with key metrics"""
@@ -934,12 +889,8 @@ def show_executive_dashboard(checkout_data, decline_data, retry_data):
         </div>
         """, unsafe_allow_html=True)
 
-# COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Page 2: Global Geo-Analytics (NEW - ENHANCED)
 
-# COMMAND ----------
 
 def show_global_geo_analytics(checkout_data):
     """Advanced geo-location analytics with interactive maps"""
@@ -1304,12 +1255,8 @@ def show_global_geo_analytics(checkout_data):
                         
                         st.plotly_chart(fig, use_container_width=True)
 
-# COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Page 3-8: Additional Pages (Continued from previous version with enhancements)
 
-# COMMAND ----------
 
 def show_smart_checkout(checkout_data):
     """Enhanced Smart Checkout page"""
@@ -1618,48 +1565,12 @@ def show_settings():
         language = st.selectbox("Language", ["English", "Spanish", "Portuguese", "German"])
         timezone = st.selectbox("Timezone", ["UTC", "EST", "PST", "CET", "JST"])
 
-# COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Run Application
 
-# COMMAND ----------
 
 if __name__ == "__main__":
     main()
 
-# COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Deployment Instructions
-# MAGIC
-# MAGIC To deploy this premium app to Databricks:
-# MAGIC
-# MAGIC 1. **Copy files to deployment directory:**
-# MAGIC ```bash
-# MAGIC mkdir -p /tmp/payment-app-premium
-# MAGIC cp notebooks/08_premium_app/08_premium_app_ui.py /tmp/payment-app-premium/app.py
-# MAGIC cp app.yaml /tmp/payment-app-premium/
-# MAGIC cp requirements.txt /tmp/payment-app-premium/
-# MAGIC ```
-# MAGIC
-# MAGIC 2. **Upload to Databricks workspace:**
-# MAGIC ```bash
-# MAGIC databricks workspace import-dir /tmp/payment-app-premium \
 #   /Workspace/Users/<your-email>/payment-authorization-premium --overwrite
-# MAGIC ```
-# MAGIC
-# MAGIC 3. **Deploy the app:**
-# MAGIC ```bash
-# MAGIC databricks apps deploy payment-authorization-premium \
 #   --source-code-path /Workspace/Users/<your-email>/payment-authorization-premium
-# MAGIC ```
-# MAGIC
-# MAGIC **Features include:**
-# MAGIC - 🗺️ Interactive geo-location maps with PyDeck
-# MAGIC - 8 dedicated pages for different analytics views
-# MAGIC - Country-level drill-downs
-# MAGIC - Choropleth world maps
-# MAGIC - Enhanced UI/UX with premium styling
-# MAGIC - Real-time data visualization
-# MAGIC - Genie AI integration
