@@ -1,9 +1,9 @@
 -- Databricks notebook source
 -- MAGIC %md
 -- MAGIC # Dashboard 2: Transaction Volume Analysis by Country
--- MAGIC 
+-- MAGIC
 -- MAGIC **Purpose:** Monitor global transaction patterns, identify growth opportunities, and track regional performance metrics.
--- MAGIC 
+-- MAGIC
 -- MAGIC **Key Metrics:**
 -- MAGIC - Transaction volume by country
 -- MAGIC - Geographic distribution
@@ -18,6 +18,7 @@
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Cell 3
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_transactions_by_country AS
 SELECT 
   t.cardholder_country AS country,
@@ -445,32 +446,32 @@ SELECT * FROM payments_lakehouse.gold.dashboard_fastest_growing_countries;
 
 -- MAGIC %md
 -- MAGIC ## Dashboard Layout Recommendations
--- MAGIC 
+-- MAGIC
 -- MAGIC **Page 1: Global Overview**
 -- MAGIC - Top: 4 KPI cards (Query 8: Total countries, transactions, volume, WoW growth)
 -- MAGIC - Center: Large choropleth map (Query 1: Transactions by country)
 -- MAGIC - Bottom: Horizontal bar chart (Query 2: Top 20 countries)
--- MAGIC 
+-- MAGIC
 -- MAGIC **Page 2: Country Performance**
 -- MAGIC - Top: Multi-line chart (Query 3: Daily trend by top 10 countries)
 -- MAGIC - Middle Left: Stacked bar (Query 6: Channel breakdown by country)
 -- MAGIC - Middle Right: Table (Query 9: Fastest growing countries)
 -- MAGIC - Bottom: Heatmap (Query 7: Hourly patterns)
--- MAGIC 
+-- MAGIC
 -- MAGIC **Page 3: Cross-Border Analysis**
 -- MAGIC - Top: Sankey diagram (Query 4: Cross-border flow)
 -- MAGIC - Bottom Left: Grouped bar (Query 5: Regional performance)
 -- MAGIC - Bottom Right: Statistics table (cross-border metrics)
--- MAGIC 
+-- MAGIC
 -- MAGIC **Filters:**
 -- MAGIC - Date range (default: last 30 days)
 -- MAGIC - Country/Region (multi-select with search)
 -- MAGIC - Channel (online, mobile, pos)
 -- MAGIC - Transaction amount range
 -- MAGIC - Cross-border flag (yes/no/all)
--- MAGIC 
+-- MAGIC
 -- MAGIC **Refresh Rate:** Every 5 minutes
--- MAGIC 
+-- MAGIC
 -- MAGIC **Export Options:**
 -- MAGIC - CSV export for all queries
 -- MAGIC - PDF dashboard snapshot
