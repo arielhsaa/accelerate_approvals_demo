@@ -128,12 +128,11 @@ SELECT * FROM payments_lakehouse.gold.dashboard_sector_risk_hourly;
 
 -- COMMAND ----------
 
--- DBTITLE 1,Cell 9
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_high_risk_industries AS
 SELECT 
-  m.merchant_cluster,
-  m.mcc_description,
-  m.mcc,
+  m.merchant_sector,
+  m.merchant_category,
+  m.mcc_code,
   COUNT(DISTINCT t.transaction_id) AS total_transactions,
   COUNT(DISTINCT t.merchant_id) AS merchant_count,
   AVG(t.composite_risk_score) AS avg_risk_score,
@@ -145,6 +144,7 @@ SELECT
   AVG(t.amount) AS avg_transaction_size,
   -- Risk factors
   AVG(CASE WHEN t.is_cross_border THEN 1 ELSE 0 END) * 100 AS pct_cross_border,
+  AVG(CASE WHEN t.is_high_value THEN 1 ELSE 0 END) * 100 AS pct_high_value,
   -- Recommended solutions
   SUM(CASE WHEN t.recommended_solution_name LIKE '%3DS%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_3ds,
   SUM(CASE WHEN t.recommended_solution_name LIKE '%Antifraud%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_antifraud
@@ -152,7 +152,7 @@ FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
   AND t.composite_risk_score > 0.60  -- Focus on medium-high to critical risk
-GROUP BY m.merchant_cluster, m.mcc_description, m.mcc
+GROUP BY m.merchant_sector, m.merchant_category, m.mcc_code
 HAVING COUNT(*) >= 50  -- Minimum volume for statistical significance
 ORDER BY avg_risk_score DESC, critical_risk_count DESC
 LIMIT 50;
@@ -177,10 +177,11 @@ CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_risk_trend AS
 SELECT 
   DATE_TRUNC('day', t.timestamp) AS date,
   m.merchant_sector,
-  AVG(t.risk_score) AS avg_risk_score,
+  AVG(t.composite_risk_score) AS avg_risk_score,
   AVG(t.cardholder_risk_score) AS avg_cardholder_risk,
   AVG(t.merchant_risk_score) AS avg_merchant_risk,
-  AVG(t.external_risk_score) AS avg_external_risk,
+  AVG(t.country_risk_score) AS avg_country_risk,
+  AVG(t.sector_risk_score) AS avg_sector_risk,
   COUNT(*) AS transaction_count,
   SUM(t.amount) AS daily_volume
 FROM payments_lakehouse.silver.payments_enriched_stream t
@@ -207,24 +208,24 @@ SELECT * FROM payments_lakehouse.gold.dashboard_risk_trend;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_risk_mitigation AS
 SELECT 
   m.merchant_sector,
-  t.chosen_solution_stack,
+  t.recommended_solution_name AS solution_stack,
   -- Overall metrics
   COUNT(*) AS total_transactions,
-  AVG(t.risk_score) AS avg_risk_score_before_mitigation,
-  AVG(CASE WHEN t.approval_status = 'approved' THEN t.risk_score END) AS avg_risk_score_approved,
+  AVG(t.composite_risk_score) AS avg_risk_score_before_mitigation,
+  AVG(CASE WHEN t.is_approved THEN t.composite_risk_score END) AS avg_risk_score_approved,
   -- Approval metrics
-  SUM(CASE WHEN t.approval_status = 'approved' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
   -- Fraud metrics
   SUM(CASE WHEN t.reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) AS fraud_attempts_blocked,
   SUM(CASE WHEN t.reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS fraud_block_rate,
   -- Cost metrics
-  AVG(t.processing_cost_usd) AS avg_cost_per_transaction,
+  AVG(t.solution_cost) AS avg_cost_per_transaction,
   SUM(t.amount) AS total_volume_processed
 FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
-  AND t.risk_score > 0.50  -- Focus on higher risk transactions
-GROUP BY m.merchant_sector, t.chosen_solution_stack
+  AND t.composite_risk_score > 0.50  -- Focus on higher risk transactions
+GROUP BY m.merchant_sector, t.recommended_solution_name
 HAVING COUNT(*) >= 20
 ORDER BY m.merchant_sector, avg_risk_score_before_mitigation DESC;
 
@@ -246,24 +247,24 @@ SELECT * FROM payments_lakehouse.gold.dashboard_risk_mitigation;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_external_risk_impact AS
 SELECT 
   m.merchant_sector,
-  t.geography,
-  -- External risk factors
-  AVG(e.sector_risk_score) AS avg_sector_risk,
-  AVG(e.country_risk_score) AS avg_country_risk,
-  AVG(e.macro_economic_score) AS avg_macro_risk,
-  AVG(e.aml_risk_score) AS avg_aml_risk,
+  t.cardholder_country AS geography,
+  -- External risk factors (from joined table)
+  AVG(t.sector_risk_score) AS avg_sector_risk,
+  AVG(t.country_risk_score) AS avg_country_risk,
+  AVG(t.aml_risk_level) AS avg_aml_risk,
   -- Transaction outcomes
   COUNT(*) AS transaction_count,
-  AVG(t.risk_score) AS avg_combined_risk_score,
-  SUM(CASE WHEN t.approval_status = 'declined' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS decline_rate,
+  AVG(t.composite_risk_score) AS avg_combined_risk_score,
+  SUM(CASE WHEN NOT t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS decline_rate,
   SUM(CASE WHEN t.reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS fraud_rate,
   -- Volume
   SUM(t.amount) AS total_volume
 FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
-JOIN payments_lakehouse.bronze.external_risk_signals e ON t.external_risk_signal_id = e.signal_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
-GROUP BY m.merchant_sector, t.geography
+  AND t.country_risk_score IS NOT NULL
+  AND t.sector_risk_score IS NOT NULL
+GROUP BY m.merchant_sector, t.cardholder_country
 ORDER BY avg_combined_risk_score DESC;
 
 -- Visualization Type: Scatter Plot
@@ -285,21 +286,21 @@ SELECT * FROM payments_lakehouse.gold.dashboard_external_risk_impact;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_risk_kpis AS
 SELECT 
   -- Overall risk metrics
-  AVG(risk_score) AS overall_avg_risk_score,
-  PERCENTILE(risk_score, 0.50) AS median_risk_score,
-  PERCENTILE(risk_score, 0.90) AS p90_risk_score,
-  PERCENTILE(risk_score, 0.95) AS p95_risk_score,
-  PERCENTILE(risk_score, 0.99) AS p99_risk_score,
+  AVG(composite_risk_score) AS overall_avg_risk_score,
+  PERCENTILE(composite_risk_score, 0.50) AS median_risk_score,
+  PERCENTILE(composite_risk_score, 0.90) AS p90_risk_score,
+  PERCENTILE(composite_risk_score, 0.95) AS p95_risk_score,
+  PERCENTILE(composite_risk_score, 0.99) AS p99_risk_score,
   
   -- Risk distribution
-  SUM(CASE WHEN risk_score < 0.3 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_low_risk,
-  SUM(CASE WHEN risk_score BETWEEN 0.3 AND 0.6 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_medium_risk,
-  SUM(CASE WHEN risk_score BETWEEN 0.6 AND 0.85 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_high_risk,
-  SUM(CASE WHEN risk_score > 0.85 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_critical_risk,
+  SUM(CASE WHEN composite_risk_score < 0.3 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_low_risk,
+  SUM(CASE WHEN composite_risk_score BETWEEN 0.3 AND 0.6 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_medium_risk,
+  SUM(CASE WHEN composite_risk_score BETWEEN 0.6 AND 0.85 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_high_risk,
+  SUM(CASE WHEN composite_risk_score > 0.85 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_critical_risk,
   
   -- High-risk transactions
-  SUM(CASE WHEN risk_score > 0.75 THEN 1 ELSE 0 END) AS high_risk_transaction_count,
-  SUM(CASE WHEN risk_score > 0.75 THEN amount ELSE 0 END) AS high_risk_volume_usd,
+  SUM(CASE WHEN composite_risk_score > 0.75 THEN 1 ELSE 0 END) AS high_risk_transaction_count,
+  SUM(CASE WHEN composite_risk_score > 0.75 THEN amount ELSE 0 END) AS high_risk_volume_usd,
   
   -- Fraud indicators
   SUM(CASE WHEN reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) AS security_violations,

@@ -1,0 +1,145 @@
+# ============================================================================
+# Databricks App Configuration
+# Payment Authorization Advanced App - Professional Version
+# ============================================================================
+# Version: 2.0.0 (Advanced)
+# Last Updated: 2026-01-31
+# Purpose: Professional app with multi-page navigation and advanced analytics
+# ============================================================================
+
+command: 
+  - 'streamlit'
+  - 'run'
+  - 'app.py'
+  - '--server.port=8501'
+  - '--server.address=0.0.0.0'
+  - '--server.headless=true'
+  - '--server.enableCORS=false'
+  - '--server.enableXsrfProtection=false'
+  - '--browser.gatherUsageStats=false'
+
+env:
+  # Streamlit Configuration
+  - name: 'STREAMLIT_GATHER_USAGE_STATS'
+    value: 'false'
+  - name: 'STREAMLIT_BROWSER_GATHER_USAGE_STATS'
+    value: 'false'
+  - name: 'STREAMLIT_SERVER_HEADLESS'
+    value: 'true'
+  - name: 'STREAMLIT_SERVER_PORT'
+    value: '8501'
+  - name: 'STREAMLIT_SERVER_ENABLE_CORS'
+    value: 'false'
+  
+  # Unity Catalog Configuration
+  - name: 'CATALOG'
+    value: 'payments_lakehouse'
+  - name: 'SCHEMA_BRONZE'
+    value: 'bronze'
+  - name: 'SCHEMA_SILVER'
+    value: 'silver'
+  - name: 'SCHEMA_GOLD'
+    value: 'gold'
+  
+  # Application Settings
+  - name: 'APP_NAME'
+    value: 'Payment Authorization Advanced'
+  - name: 'APP_VERSION'
+    value: '2.0.0-advanced'
+  - name: 'APP_TYPE'
+    value: 'advanced'
+  - name: 'LOG_LEVEL'
+    value: 'INFO'
+  
+  # Feature Flags (Advanced - Full Feature Set)
+  - name: 'ENABLE_GENIE'
+    value: 'true'
+  - name: 'ENABLE_SMART_CHECKOUT'
+    value: 'true'
+  - name: 'ENABLE_SMART_RETRY'
+    value: 'true'
+  - name: 'ENABLE_REASON_CODE_ANALYTICS'
+    value: 'true'
+  - name: 'ENABLE_MULTI_PAGE'
+    value: 'true'
+  - name: 'ENABLE_ADVANCED_VISUALIZATIONS'
+    value: 'true'
+  
+  # Data Refresh Settings
+  - name: 'DATA_REFRESH_INTERVAL'
+    value: '60'  # 1 minute for real-time feel
+  - name: 'CACHE_TTL'
+    value: '300'  # 5 minutes cache
+  
+  # Databricks Connection
+  - name: 'DATABRICKS_HOST'
+    value: 'auto'
+  - name: 'DATABRICKS_TOKEN'
+    value: 'auto'
+
+# Resource Allocation (Standard for Advanced Features)
+resources:
+  limits:
+    memory: "8Gi"
+    cpu: "4"
+  requests:
+    memory: "4Gi"
+    cpu: "2"
+
+# Health Check Configuration
+healthCheck:
+  path: "/_stcore/health"
+  port: 8501
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+# Application Metadata
+metadata:
+  name: "payment-authorization-advanced"
+  displayName: "Payment Authorization Advanced"
+  description: |
+    Professional payment authorization analytics platform with multi-page navigation.
+    
+    Features:
+    - Executive Dashboard: High-level KPIs and trends
+    - Smart Checkout: Dynamic payment solution optimization
+    - Decline Analysis: Real-time reason code performance analytics
+    - Smart Retry: Intelligent retry recommendation engine
+    - Geographic Performance: Cross-border transaction insights
+    - Genie AI: Natural language query interface
+    - Configuration: Policy management and settings
+    
+    Perfect for: Daily operations, data analysts, product managers
+    
+    Built with: Streamlit, Plotly, PySpark, Delta Lake, MLflow, Databricks SQL
+  version: "2.0.0-advanced"
+  author: "Databricks Solutions Team"
+  license: "Databricks License"
+  
+  tags:
+    - "payments"
+    - "fintech"
+    - "analytics"
+    - "databricks"
+    - "lakehouse"
+    - "streamlit"
+    - "machine-learning"
+    - "real-time"
+    - "multi-page"
+    - "advanced"
+  
+  categories:
+    - "Financial Services"
+    - "Analytics & BI"
+    - "Machine Learning"
+  
+  keywords:
+    - "payment authorization"
+    - "approval rate optimization"
+    - "smart checkout"
+    - "decline analysis"
+    - "smart retry"
+    - "multi-page dashboard"

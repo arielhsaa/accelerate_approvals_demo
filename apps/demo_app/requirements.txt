@@ -1,0 +1,27 @@
+# ============================================================================
+# Payment Authorization Demo App - Minimal Dependencies
+# ============================================================================
+# Version: 1.0.0 (Demo)
+# Purpose: Lightweight dependencies for basic demo functionality
+# ============================================================================
+
+# Core Streamlit Framework
+streamlit==1.29.0
+streamlit-extras==0.3.6
+
+# Basic Data Visualization
+plotly==5.18.0
+
+# Data Processing
+pandas==2.1.4
+numpy==1.26.2
+
+# Databricks Integration
+databricks-sql-connector==3.0.2
+
+# Date/Time Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Configuration
+PyYAML==6.0.1

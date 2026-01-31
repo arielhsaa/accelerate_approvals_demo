@@ -20,7 +20,7 @@
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_transactions_by_country AS
 SELECT 
-  t.geography AS country,
+  t.cardholder_country AS country,
   c.country_code,
   c.country_name,
   c.region,
@@ -30,30 +30,30 @@ SELECT
   COUNT(DISTINCT t.cardholder_id) AS unique_cardholders,
   COUNT(DISTINCT t.merchant_id) AS unique_merchants,
   -- Transaction types
-  SUM(CASE WHEN t.cross_border_flag = 1 THEN 1 ELSE 0 END) AS cross_border_transactions,
-  SUM(CASE WHEN t.cross_border_flag = 1 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_cross_border,
+  SUM(CASE WHEN t.is_cross_border THEN 1 ELSE 0 END) AS cross_border_transactions,
+  SUM(CASE WHEN t.is_cross_border THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_cross_border,
   -- Volume metrics
   SUM(t.amount) AS total_volume_usd,
   AVG(t.amount) AS avg_transaction_amount,
   PERCENTILE(t.amount, 0.50) AS median_transaction_amount,
   PERCENTILE(t.amount, 0.90) AS p90_transaction_amount,
   -- Approval metrics
-  SUM(CASE WHEN t.approval_status = 'approved' THEN 1 ELSE 0 END) AS approved_count,
-  SUM(CASE WHEN t.approval_status = 'approved' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) AS approved_count,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
   -- Channel breakdown
-  SUM(CASE WHEN t.channel = 'online' THEN 1 ELSE 0 END) AS online_transactions,
-  SUM(CASE WHEN t.channel = 'mobile' THEN 1 ELSE 0 END) AS mobile_transactions,
+  SUM(CASE WHEN t.channel = 'ecommerce' THEN 1 ELSE 0 END) AS online_transactions,
+  SUM(CASE WHEN t.channel = 'moto' THEN 1 ELSE 0 END) AS mobile_transactions,
   SUM(CASE WHEN t.channel = 'pos' THEN 1 ELSE 0 END) AS pos_transactions,
   -- Risk metrics
-  AVG(t.risk_score) AS avg_risk_score,
-  SUM(CASE WHEN t.risk_score > 0.75 THEN 1 ELSE 0 END) AS high_risk_transactions,
+  AVG(t.composite_risk_score) AS avg_risk_score,
+  SUM(CASE WHEN t.composite_risk_score > 0.75 THEN 1 ELSE 0 END) AS high_risk_transactions,
   -- Growth metrics
   COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 1 DAY THEN 1 END) AS transactions_last_24h,
   COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS AND t.timestamp < current_timestamp() - INTERVAL 6 DAYS THEN 1 END) AS transactions_7_days_ago
 FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.cardholders_dim c ON t.cardholder_id = c.cardholder_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
-GROUP BY t.geography, c.country_code, c.country_name, c.region, c.continent
+GROUP BY t.cardholder_country, c.country_code, c.country_name, c.region, c.continent
 ORDER BY total_volume_usd DESC;
 
 -- Visualization Type: Choropleth Map
@@ -72,7 +72,7 @@ SELECT * FROM payments_lakehouse.gold.dashboard_transactions_by_country;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_top_countries AS
 SELECT 
-  t.geography AS country,
+  t.cardholder_country AS country,
   c.country_name,
   -- Current period (last 7 days)
   COUNT(DISTINCT CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN t.transaction_id END) AS transactions_current_week,
@@ -88,13 +88,13 @@ SELECT
          SUM(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 14 DAYS AND t.timestamp < current_timestamp() - INTERVAL 7 DAYS THEN t.amount ELSE 0 END)) /
          NULLIF(SUM(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 14 DAYS AND t.timestamp < current_timestamp() - INTERVAL 7 DAYS THEN t.amount ELSE 0 END), 0) * 100, 2) AS volume_growth_pct,
   -- Performance metrics
-  SUM(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS AND t.approval_status = 'approved' THEN 1 ELSE 0 END) / 
+  SUM(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS AND t.is_approved THEN 1 ELSE 0 END) / 
     NULLIF(COUNT(DISTINCT CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN t.transaction_id END), 0) * 100 AS approval_rate_current_week,
   AVG(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN t.amount END) AS avg_transaction_size_current_week
 FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.cardholders_dim c ON t.cardholder_id = c.cardholder_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 14 DAYS
-GROUP BY t.geography, c.country_name
+GROUP BY t.cardholder_country, c.country_name
 HAVING transactions_current_week > 0
 ORDER BY volume_current_week_usd DESC
 LIMIT 20;
@@ -116,30 +116,30 @@ SELECT * FROM payments_lakehouse.gold.dashboard_top_countries;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_country_daily_trend AS
 WITH top_countries AS (
-  SELECT geography, SUM(amount) AS total_volume
+  SELECT cardholder_country, SUM(amount) AS total_volume
   FROM payments_lakehouse.silver.payments_enriched_stream
   WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-  GROUP BY geography
+  GROUP BY cardholder_country
   ORDER BY total_volume DESC
   LIMIT 10
 )
 SELECT 
   DATE_TRUNC('day', t.timestamp) AS date,
-  t.geography AS country,
+  t.cardholder_country AS country,
   COUNT(DISTINCT t.transaction_id) AS transaction_count,
   SUM(t.amount) AS daily_volume_usd,
   AVG(t.amount) AS avg_transaction_amount,
-  SUM(CASE WHEN t.approval_status = 'approved' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
   COUNT(DISTINCT t.cardholder_id) AS unique_cardholders,
   COUNT(DISTINCT t.merchant_id) AS unique_merchants,
   -- Moving averages
-  AVG(SUM(t.amount)) OVER (PARTITION BY t.geography ORDER BY DATE_TRUNC('day', t.timestamp) ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS volume_7day_ma,
-  AVG(COUNT(DISTINCT t.transaction_id)) OVER (PARTITION BY t.geography ORDER BY DATE_TRUNC('day', t.timestamp) ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS transactions_7day_ma
+  AVG(SUM(t.amount)) OVER (PARTITION BY t.cardholder_country ORDER BY DATE_TRUNC('day', t.timestamp) ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS volume_7day_ma,
+  AVG(COUNT(DISTINCT t.transaction_id)) OVER (PARTITION BY t.cardholder_country ORDER BY DATE_TRUNC('day', t.timestamp) ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS transactions_7day_ma
 FROM payments_lakehouse.silver.payments_enriched_stream t
 WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
-  AND t.geography IN (SELECT geography FROM top_countries)
-GROUP BY date, t.geography
-ORDER BY date DESC, t.geography;
+  AND t.cardholder_country IN (SELECT cardholder_country FROM top_countries)
+GROUP BY date, t.cardholder_country
+ORDER BY date DESC, t.cardholder_country;
 
 -- Visualization Type: Multi-line Chart
 -- X-axis: date
@@ -159,29 +159,28 @@ SELECT * FROM payments_lakehouse.gold.dashboard_country_daily_trend;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_cross_border_flow AS
 SELECT 
   c.country_name AS origin_country,
-  t.geography AS origin_geography,
-  m.merchant_country AS destination_country,
+  t.cardholder_country AS origin_geography,
+  t.merchant_country AS destination_country,
   -- Transaction metrics
   COUNT(DISTINCT t.transaction_id) AS cross_border_transactions,
   SUM(t.amount) AS total_volume_usd,
   AVG(t.amount) AS avg_transaction_amount,
   -- Performance metrics
-  SUM(CASE WHEN t.approval_status = 'approved' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
-  AVG(t.risk_score) AS avg_risk_score,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
+  AVG(t.composite_risk_score) AS avg_risk_score,
   -- Decline analysis
-  SUM(CASE WHEN t.approval_status = 'declined' THEN 1 ELSE 0 END) AS decline_count,
+  SUM(CASE WHEN NOT t.is_approved THEN 1 ELSE 0 END) AS decline_count,
   SUM(CASE WHEN t.reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) AS security_violations,
   -- Solution usage
-  SUM(CASE WHEN t.chosen_solution_stack LIKE '%3DS%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_3ds,
-  SUM(CASE WHEN t.chosen_solution_stack LIKE '%Antifraud%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_antifraud,
+  SUM(CASE WHEN t.recommended_solution_name LIKE '%3DS%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_3ds,
+  SUM(CASE WHEN t.recommended_solution_name LIKE '%Antifraud%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_antifraud,
   -- Popular corridors
   COUNT(*) AS transaction_rank
 FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.cardholders_dim c ON t.cardholder_id = c.cardholder_id
-JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
-WHERE t.cross_border_flag = 1
+WHERE t.is_cross_border = TRUE
   AND t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
-GROUP BY origin_country, origin_geography, destination_country
+GROUP BY origin_country, t.cardholder_country, t.merchant_country
 HAVING COUNT(*) >= 10  -- Minimum threshold for statistical significance
 ORDER BY total_volume_usd DESC
 LIMIT 50;
@@ -213,16 +212,16 @@ SELECT
   SUM(t.amount) AS total_volume_usd,
   AVG(t.amount) AS avg_transaction_amount,
   -- Approval metrics
-  SUM(CASE WHEN t.approval_status = 'approved' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
   -- Channel distribution
-  SUM(CASE WHEN t.channel = 'online' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_online,
-  SUM(CASE WHEN t.channel = 'mobile' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_mobile,
+  SUM(CASE WHEN t.channel = 'ecommerce' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_online,
+  SUM(CASE WHEN t.channel = 'moto' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_mobile,
   SUM(CASE WHEN t.channel = 'pos' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_pos,
   -- Risk and fraud
-  AVG(t.risk_score) AS avg_risk_score,
+  AVG(t.composite_risk_score) AS avg_risk_score,
   SUM(CASE WHEN t.reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS fraud_rate,
   -- Cross-border
-  SUM(CASE WHEN t.cross_border_flag = 1 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_cross_border,
+  SUM(CASE WHEN t.is_cross_border THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_cross_border,
   -- Growth (WoW)
   COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN 1 END) AS transactions_this_week,
   COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 14 DAYS AND t.timestamp < current_timestamp() - INTERVAL 7 DAYS THEN 1 END) AS transactions_last_week,
@@ -251,26 +250,26 @@ SELECT * FROM payments_lakehouse.gold.dashboard_regional_performance;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_country_channel_breakdown AS
 SELECT 
-  t.geography AS country,
+  t.cardholder_country AS country,
   t.channel,
-  t.payment_method,
+  t.card_network AS payment_method,
   -- Transaction counts
   COUNT(DISTINCT t.transaction_id) AS transaction_count,
   SUM(t.amount) AS total_volume_usd,
   AVG(t.amount) AS avg_transaction_amount,
   -- Performance
-  SUM(CASE WHEN t.approval_status = 'approved' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
   -- Market share within country
-  COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (PARTITION BY t.geography) AS pct_of_country_volume,
+  COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (PARTITION BY t.cardholder_country) AS pct_of_country_volume,
   -- Risk
-  AVG(t.risk_score) AS avg_risk_score,
+  AVG(t.composite_risk_score) AS avg_risk_score,
   -- Solution usage
-  MAX(t.chosen_solution_stack) AS most_common_solution
+  MAX(t.recommended_solution_name) AS most_common_solution
 FROM payments_lakehouse.silver.payments_enriched_stream t
 WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
-GROUP BY t.geography, t.channel, t.payment_method
+GROUP BY t.cardholder_country, t.channel, t.card_network
 HAVING COUNT(*) >= 5
-ORDER BY t.geography, transaction_count DESC;
+ORDER BY t.cardholder_country, transaction_count DESC;
 
 -- Visualization Type: Stacked Bar Chart
 -- X-axis: country (top 15 by volume)
@@ -280,11 +279,11 @@ ORDER BY t.geography, transaction_count DESC;
 
 SELECT * FROM payments_lakehouse.gold.dashboard_country_channel_breakdown
 WHERE country IN (
-  SELECT geography FROM (
-    SELECT geography, SUM(amount) AS vol 
+  SELECT cardholder_country FROM (
+    SELECT cardholder_country, SUM(amount) AS vol 
     FROM payments_lakehouse.silver.payments_enriched_stream 
     WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-    GROUP BY geography ORDER BY vol DESC LIMIT 15
+    GROUP BY cardholder_country ORDER BY vol DESC LIMIT 15
   )
 );
 
@@ -297,7 +296,7 @@ WHERE country IN (
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_country_hourly_pattern AS
 SELECT 
-  t.geography AS country,
+  t.cardholder_country AS country,
   EXTRACT(HOUR FROM t.timestamp) AS hour_of_day,
   CASE 
     WHEN EXTRACT(HOUR FROM t.timestamp) BETWEEN 6 AND 11 THEN 'Morning'
@@ -310,14 +309,14 @@ SELECT
   AVG(t.amount) AS avg_transaction_amount,
   SUM(t.amount) AS total_volume_usd,
   -- Performance
-  SUM(CASE WHEN t.approval_status = 'approved' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
-  AVG(t.risk_score) AS avg_risk_score,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS approval_rate,
+  AVG(t.composite_risk_score) AS avg_risk_score,
   -- Peak identification
   COUNT(*) AS transactions_this_hour
 FROM payments_lakehouse.silver.payments_enriched_stream t
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
-GROUP BY t.geography, hour_of_day, time_period
-ORDER BY t.geography, hour_of_day;
+GROUP BY t.cardholder_country, hour_of_day, time_period
+ORDER BY t.cardholder_country, hour_of_day;
 
 -- Visualization Type: Heatmap
 -- X-axis: hour_of_day
@@ -327,11 +326,11 @@ ORDER BY t.geography, hour_of_day;
 
 SELECT * FROM payments_lakehouse.gold.dashboard_country_hourly_pattern
 WHERE country IN (
-  SELECT geography FROM (
-    SELECT geography, COUNT(*) AS cnt 
+  SELECT cardholder_country FROM (
+    SELECT cardholder_country, COUNT(*) AS cnt 
     FROM payments_lakehouse.silver.payments_enriched_stream 
     WHERE timestamp >= current_timestamp() - INTERVAL 7 DAYS
-    GROUP BY geography ORDER BY cnt DESC LIMIT 10
+    GROUP BY cardholder_country ORDER BY cnt DESC LIMIT 10
   )
 );
 
@@ -345,28 +344,28 @@ WHERE country IN (
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_country_kpis AS
 SELECT 
   -- Global totals
-  COUNT(DISTINCT geography) AS total_countries,
+  COUNT(DISTINCT cardholder_country) AS total_countries,
   COUNT(DISTINCT transaction_id) AS total_global_transactions,
   SUM(amount) AS total_global_volume_usd,
   AVG(amount) AS global_avg_transaction_amount,
   
   -- Top performers
-  (SELECT geography FROM payments_lakehouse.silver.payments_enriched_stream 
+  (SELECT cardholder_country FROM payments_lakehouse.silver.payments_enriched_stream 
    WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-   GROUP BY geography ORDER BY SUM(amount) DESC LIMIT 1) AS top_country_by_volume,
+   GROUP BY cardholder_country ORDER BY SUM(amount) DESC LIMIT 1) AS top_country_by_volume,
   
   (SELECT SUM(amount) FROM payments_lakehouse.silver.payments_enriched_stream 
    WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-   AND geography = (
-     SELECT geography FROM payments_lakehouse.silver.payments_enriched_stream 
+   AND cardholder_country = (
+     SELECT cardholder_country FROM payments_lakehouse.silver.payments_enriched_stream 
      WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-     GROUP BY geography ORDER BY SUM(amount) DESC LIMIT 1
+     GROUP BY cardholder_country ORDER BY SUM(amount) DESC LIMIT 1
    )) AS top_country_volume_usd,
   
   -- Cross-border metrics
-  SUM(CASE WHEN cross_border_flag = 1 THEN 1 ELSE 0 END) AS total_cross_border_transactions,
-  SUM(CASE WHEN cross_border_flag = 1 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_cross_border,
-  SUM(CASE WHEN cross_border_flag = 1 THEN amount ELSE 0 END) AS cross_border_volume_usd,
+  SUM(CASE WHEN is_cross_border THEN 1 ELSE 0 END) AS total_cross_border_transactions,
+  SUM(CASE WHEN is_cross_border THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_cross_border,
+  SUM(CASE WHEN is_cross_border THEN amount ELSE 0 END) AS cross_border_volume_usd,
   
   -- Growth metrics
   COUNT(CASE WHEN timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN 1 END) AS transactions_last_7_days,
@@ -397,7 +396,7 @@ SELECT * FROM payments_lakehouse.gold.dashboard_country_kpis;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_fastest_growing_countries AS
 SELECT 
-  t.geography AS country,
+  t.cardholder_country AS country,
   c.country_name,
   c.region,
   -- Current period metrics
@@ -429,7 +428,7 @@ SELECT
 FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.cardholders_dim c ON t.cardholder_id = c.cardholder_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 14 DAYS
-GROUP BY t.geography, c.country_name, c.region
+GROUP BY t.cardholder_country, c.country_name, c.region
 HAVING transactions_current_week >= 10  -- Minimum threshold
 ORDER BY transaction_growth_pct DESC
 LIMIT 20;

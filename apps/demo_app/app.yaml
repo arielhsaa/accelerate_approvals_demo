@@ -1,0 +1,109 @@
+# ============================================================================
+# Databricks App Configuration
+# Payment Authorization Demo App - Basic Version
+# ============================================================================
+# Version: 1.0.0 (Demo)
+# Last Updated: 2026-01-31
+# Purpose: Lightweight demo app for quick presentations and basic monitoring
+# ============================================================================
+
+command: 
+  - 'streamlit'
+  - 'run'
+  - 'app.py'
+  - '--server.port=8501'
+  - '--server.address=0.0.0.0'
+  - '--server.headless=true'
+  - '--browser.gatherUsageStats=false'
+
+env:
+  # Streamlit Configuration
+  - name: 'STREAMLIT_GATHER_USAGE_STATS'
+    value: 'false'
+  - name: 'STREAMLIT_SERVER_HEADLESS'
+    value: 'true'
+  - name: 'STREAMLIT_SERVER_PORT'
+    value: '8501'
+  
+  # Unity Catalog Configuration
+  - name: 'CATALOG'
+    value: 'payments_lakehouse'
+  - name: 'SCHEMA_SILVER'
+    value: 'silver'
+  - name: 'SCHEMA_GOLD'
+    value: 'gold'
+  
+  # Application Settings
+  - name: 'APP_NAME'
+    value: 'Payment Authorization Demo'
+  - name: 'APP_VERSION'
+    value: '1.0.0-demo'
+  - name: 'APP_TYPE'
+    value: 'demo'
+  - name: 'LOG_LEVEL'
+    value: 'INFO'
+  
+  # Feature Flags (Demo - Basic Features Only)
+  - name: 'ENABLE_GENIE'
+    value: 'false'
+  - name: 'ENABLE_SMART_CHECKOUT'
+    value: 'true'
+  - name: 'ENABLE_SMART_RETRY'
+    value: 'false'
+  - name: 'ENABLE_REASON_CODE_ANALYTICS'
+    value: 'true'
+  
+  # Data Refresh Settings
+  - name: 'DATA_REFRESH_INTERVAL'
+    value: '120'  # 2 minutes for demo
+  - name: 'CACHE_TTL'
+    value: '600'  # 10 minutes cache
+
+# Resource Allocation (Lightweight for Demo)
+resources:
+  limits:
+    memory: "4Gi"
+    cpu: "2"
+  requests:
+    memory: "2Gi"
+    cpu: "1"
+
+# Health Check Configuration
+healthCheck:
+  path: "/_stcore/health"
+  port: 8501
+  initialDelaySeconds: 30
+  periodSeconds: 20
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+# Application Metadata
+metadata:
+  name: "payment-authorization-demo"
+  displayName: "Payment Authorization Demo"
+  description: |
+    Lightweight demo application for payment authorization monitoring.
+    
+    Features:
+    - Real-time transaction monitoring
+    - Basic KPI dashboard
+    - Simple geographic visualization
+    - Decline reason analysis
+    
+    Perfect for: Quick demos, presentations, basic monitoring
+    
+    Built with: Streamlit, Plotly, Databricks Lakehouse
+  version: "1.0.0-demo"
+  author: "Databricks Solutions Team"
+  
+  tags:
+    - "payments"
+    - "demo"
+    - "analytics"
+    - "streamlit"
+    - "basic"
+  
+  categories:
+    - "Financial Services"
+    - "Demo & Prototyping"
