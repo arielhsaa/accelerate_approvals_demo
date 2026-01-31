@@ -101,7 +101,7 @@ WITH segmented_performance AS (
   SELECT 
     t.cardholder_country AS geography,
     t.channel,
-    t.merchant_cluster AS merchant_category,
+    t.merchant_cluster AS merchant_risk_cluster,
     CASE 
       WHEN t.amount < 50 THEN '0-50'
       WHEN t.amount < 500 THEN '50-500'

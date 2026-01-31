@@ -132,7 +132,7 @@ SELECT * FROM payments_lakehouse.gold.dashboard_sector_risk_hourly;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_high_risk_industries AS
 SELECT 
   m.mcc_description AS merchant_sector,
-  m.merchant_cluster AS merchant_category,
+  m.merchant_cluster AS merchant_risk_cluster,
   m.mcc AS mcc_code,
   COUNT(DISTINCT t.transaction_id) AS total_transactions,
   COUNT(DISTINCT t.merchant_id) AS merchant_count,
