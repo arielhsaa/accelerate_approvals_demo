@@ -1,14 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 03 - Reason Code Performance Analytics
-# MAGIC 
+# MAGIC
 # MAGIC ## Overview
 # MAGIC This notebook implements near real-time analytics on decline reason codes to generate actionable insights:
 # MAGIC - **Reason Code Taxonomy**: Standardized mapping and categorization
 # MAGIC - **Real-time Aggregations**: By issuer, merchant, BIN, geography, channel, solution mix
 # MAGIC - **Root Cause Analysis**: Identify patterns and actionable remediation steps
 # MAGIC - **Feedback Loop**: Insights feed back into Smart Checkout configuration
-# MAGIC 
+# MAGIC
 # MAGIC ## Business Goal
 # MAGIC Convert decline analytics into actionable recommendations to reduce future declines.
 
@@ -32,6 +32,7 @@ import json
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 5
 CATALOG = "payments_lakehouse"
 SCHEMA_BRONZE = "bronze"
 SCHEMA_SILVER = "silver"
@@ -39,11 +40,11 @@ SCHEMA_GOLD = "gold"
 
 spark.sql(f"USE CATALOG {CATALOG}")
 
-# Load reason code taxonomy
-with open("/dbfs/payments_demo/config/reason_codes.json", "r") as f:
-    REASON_CODE_CONFIG = json.load(f)
+# Load routing policies
+with open(f"/Volumes/{CATALOG}/{SCHEMA_BRONZE}/payments_demo/config/reason_codes.json", "r") as f:
+    REASON_CODES = json.load(f)
 
-reason_code_taxonomy = REASON_CODE_CONFIG["reason_code_taxonomy"]
+reason_code_taxonomy = REASON_CODES["reason_code_taxonomy"]
 
 print("✅ Configuration loaded")
 print(f"   Reason Codes in Taxonomy: {len(reason_code_taxonomy)}")
@@ -316,7 +317,7 @@ df_decline_trends.write \
 
 # MAGIC %md
 # MAGIC ## Root Cause Analysis & Actionable Insights
-# MAGIC 
+# MAGIC
 # MAGIC Generate specific, actionable insights by identifying decline patterns.
 
 # COMMAND ----------
@@ -542,6 +543,7 @@ display(df_insights)
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 27
 def generate_smart_checkout_config_updates():
     """
     Generate recommended configuration updates for Smart Checkout based on decline insights.
@@ -550,18 +552,38 @@ def generate_smart_checkout_config_updates():
     config_updates = []
     
     # Find combinations with high decline rates for specific reason codes
+    # Use CTE to separate aggregation from window function
     problematic_combos = spark.sql(f"""
+    WITH decline_counts AS (
+        SELECT 
+            recommended_solution_name,
+            card_network,
+            cardholder_country,
+            reason_code,
+            COUNT(*) as decline_count
+        FROM {CATALOG}.{SCHEMA_SILVER}.payments_enriched_stream
+        WHERE NOT is_approved
+        GROUP BY recommended_solution_name, card_network, cardholder_country, reason_code
+    ),
+    decline_rates AS (
+        SELECT 
+            recommended_solution_name,
+            card_network,
+            cardholder_country,
+            reason_code,
+            decline_count,
+            ROUND(decline_count * 100.0 / SUM(decline_count) OVER (PARTITION BY recommended_solution_name, card_network, cardholder_country), 2) as decline_rate_pct
+        FROM decline_counts
+    )
     SELECT 
         recommended_solution_name,
         card_network,
         cardholder_country,
         reason_code,
-        COUNT(*) as decline_count,
-        ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (PARTITION BY recommended_solution_name, card_network, cardholder_country), 2) as decline_rate_pct
-    FROM {CATALOG}.{SCHEMA_SILVER}.payments_enriched_stream
-    WHERE NOT is_approved
-    GROUP BY recommended_solution_name, card_network, cardholder_country, reason_code
-    HAVING decline_rate_pct > 30
+        decline_count,
+        decline_rate_pct
+    FROM decline_rates
+    WHERE decline_rate_pct > 30
     ORDER BY decline_count DESC
     LIMIT 20
     """).collect()
@@ -696,30 +718,30 @@ display(df_category_breakdown)
 
 # MAGIC %md
 # MAGIC ## Summary
-# MAGIC 
+# MAGIC
 # MAGIC ✅ **Reason Code Performance Module Complete**:
 # MAGIC - Standardized reason code taxonomy with 12 mapped codes
 # MAGIC - Real-time aggregations by issuer, geography, merchant, channel, and solution mix
 # MAGIC - Time-series decline trends for monitoring
 # MAGIC - Heatmap data for issuer vs reason code visualization
-# MAGIC 
+# MAGIC
 # MAGIC ✅ **Actionable Insights Generated**:
 # MAGIC - High-impact decline patterns identified
 # MAGIC - Root cause analysis by segment
 # MAGIC - Specific remediation recommendations
 # MAGIC - Smart Checkout configuration update suggestions
-# MAGIC 
+# MAGIC
 # MAGIC **Key Findings**:
 # MAGIC - Soft declines (05, 51, 61, 65, 91) represent the largest opportunity for recovery
 # MAGIC - Security violations (63) require enhanced authentication stacks
 # MAGIC - Geographic and issuer-specific patterns drive different decline behaviors
 # MAGIC - Solution mix effectiveness varies by segment
-# MAGIC 
+# MAGIC
 # MAGIC **Feedback Loop**:
 # MAGIC - Insights feed directly into Smart Checkout policy updates
 # MAGIC - Configuration recommendations prioritized by impact
 # MAGIC - Continuous monitoring enables dynamic optimization
-# MAGIC 
+# MAGIC
 # MAGIC **Next Steps**:
 # MAGIC - Notebook 04: Smart Retry module with ML-based retry timing optimization
 # MAGIC - Notebook 05: Dashboards and Genie examples for business users

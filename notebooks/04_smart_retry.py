@@ -1,14 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 04 - Smart Retry Module with ML-Based Optimization
-# MAGIC 
+# MAGIC
 # MAGIC ## Overview
 # MAGIC This notebook implements intelligent retry decisioning for:
 # MAGIC - **Recurring Payments**: Subscription and scheduled payment retries
 # MAGIC - **Cardholder-Initiated Retries**: Customer-triggered retry attempts
 # MAGIC - **ML-Based Timing**: Optimal retry windows by issuer, segment, and reason code
 # MAGIC - **Probability Scoring**: Success prediction for retry decisions
-# MAGIC 
+# MAGIC
 # MAGIC ## Business Goal
 # MAGIC Maximize retry success rates while minimizing wasteful retry attempts and associated costs.
 
@@ -43,6 +43,7 @@ from mlflow.models.signature import infer_signature
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 6
 CATALOG = "payments_lakehouse"
 SCHEMA_BRONZE = "bronze"
 SCHEMA_SILVER = "silver"
@@ -50,13 +51,17 @@ SCHEMA_GOLD = "gold"
 
 spark.sql(f"USE CATALOG {CATALOG}")
 
+# Checkpoint path for streaming queries
+CHECKPOINT_PATH = f"/Volumes/{CATALOG}/{SCHEMA_BRONZE}/payments_demo/checkpoints"
+
 # Load retry policies
-with open("/dbfs/payments_demo/config/retry_policies.json", "r") as f:
+with open(f"/Volumes/{CATALOG}/{SCHEMA_BRONZE}/payments_demo/config/retry_policies.json", "r") as f:
     RETRY_POLICIES = json.load(f)
 
 print("✅ Configuration loaded")
 print(f"   Retry Strategies: {list(RETRY_POLICIES['retry_strategies'].keys())}")
 print(f"   Decline Code Rules: {len(RETRY_POLICIES['decline_code_retry_rules'])}")
+print(f"   Checkpoint Path: {CHECKPOINT_PATH}")
 
 # COMMAND ----------
 
@@ -83,11 +88,12 @@ print(f"✅ Identified {df_retry_candidates.count():,} retry candidate transacti
 
 # MAGIC %md
 # MAGIC ## Generate Synthetic Retry Attempts for Training
-# MAGIC 
+# MAGIC
 # MAGIC For a realistic demo, we'll simulate retry attempts with outcomes based on various factors.
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 10
 def generate_retry_attempts(base_df):
     """
     Generate synthetic retry attempts for declined transactions.
@@ -126,10 +132,10 @@ def generate_retry_attempts(base_df):
         .otherwise(F.col("retry_attempt_num") * 12)
     )
     
-    # Add retry timestamp
+    # Add retry timestamp - multiply hours by INTERVAL '1' HOUR
     df_retries_exploded = df_retries_exploded.withColumn(
         "retry_timestamp",
-        F.expr("timestamp + INTERVAL hours_since_decline HOURS")
+        F.expr("timestamp + hours_since_decline * INTERVAL '1' HOUR")
     )
     
     # Add time-based features for retry attempt
@@ -235,6 +241,7 @@ display(df_retry_history.limit(20))
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 11
 # Prepare features for ML model
 df_ml_features = df_retry_history.select(
     "retry_transaction_id",
@@ -268,7 +275,7 @@ issuer_window = Window.partitionBy("card_network").orderBy(F.col("retry_timestam
 df_ml_features = df_ml_features.join(
     df_retry_history.select("retry_transaction_id", "card_network", "retry_timestamp"),
     on="retry_transaction_id"
-)
+).drop(df_retry_history.card_network)
 
 # Calculate issuer 7-day success rate from retry_history
 df_issuer_stats = df_retry_history.groupBy("card_network").agg(
@@ -279,7 +286,7 @@ df_ml_features = df_ml_features.join(
     df_issuer_stats,
     on="card_network",
     how="left"
-).drop("retry_timestamp")
+).drop("retry_timestamp").drop(df_issuer_stats.card_network)
 
 print("✅ Feature engineering complete")
 print(f"   Total features: {len(df_ml_features.columns) - 2}")  # Exclude ID and target
@@ -292,8 +299,9 @@ display(df_ml_features.limit(10))
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 14
 # Start MLflow experiment
-mlflow.set_experiment("/Shared/smart_retry_experiment")
+mlflow.set_experiment("/Users/ariel.hdez@databricks.com/approvals_smart_retry_experiment")
 
 # Prepare data for training
 categorical_cols = ["card_network", "channel"]
@@ -313,6 +321,7 @@ print(f"✅ Test set: {test_df.count():,} samples")
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 15
 # Build ML Pipeline
 with mlflow.start_run(run_name="smart_retry_model_v1") as run:
     
@@ -380,10 +389,15 @@ with mlflow.start_run(run_name="smart_retry_model_v1") as run:
     print(f"   AUC: {auc:.4f}")
     print(f"   Accuracy: {accuracy:.4f}")
     
-    # Log model
+    # Infer signature from training data (required for Unity Catalog)
+    train_sample = train_df.limit(1000).toPandas()
+    signature = infer_signature(train_sample[numeric_cols + categorical_cols], train_sample["retry_approved"])
+    
+    # Log model with signature
     mlflow.spark.log_model(
         model,
         "smart_retry_model",
+        signature=signature,
         registered_model_name="smart_retry_classifier"
     )
     
@@ -398,13 +412,14 @@ with mlflow.start_run(run_name="smart_retry_model_v1") as run:
 
 # COMMAND ----------
 
+# DBTITLE 1,Feature Importance Analysis
 # Extract feature importance from GBT model
 gbt_model = model.stages[-1]
 feature_importance = gbt_model.featureImportances.toArray()
 
 # Create feature importance DataFrame
 feature_names = numeric_cols + [f"{col}_indexed" for col in categorical_cols]
-importance_data = list(zip(feature_names, feature_importance))
+importance_data = [(name, float(importance)) for name, importance in zip(feature_names, feature_importance)]
 importance_data.sort(key=lambda x: x[1], reverse=True)
 
 df_importance = spark.createDataFrame(
@@ -431,11 +446,24 @@ df_importance.write \
 
 # COMMAND ----------
 
+# Create UDF to extract probability from Vector UDT
+from pyspark.ml.linalg import VectorUDT, Vectors
+
+@F.udf(returnType=DoubleType())
+def extract_probability(probability_vector):
+    """Extract probability for positive class (index 1) from Vector"""
+    if probability_vector is not None:
+        return float(probability_vector[1])
+    return 0.0
+
+# COMMAND ----------
+
+# DBTITLE 1,Model Performance Analysis
 # Analyze predictions by segment
 df_performance = predictions.select(
     "retry_approved",
     "prediction",
-    F.col("probability")[1].alias("retry_success_probability"),
+    extract_probability(F.col("probability")).alias("retry_success_probability"),
     "card_network",
     "last_reason_code_numeric",
     "hours_since_decline",
@@ -475,6 +503,7 @@ display(df_perf_by_attempt)
 
 # COMMAND ----------
 
+# DBTITLE 1,Generate Smart Retry Recommendations
 def generate_retry_recommendations(declined_txn_df, model):
     """
     Generate retry recommendations for declined transactions using the trained model.
@@ -513,10 +542,10 @@ def generate_retry_recommendations(declined_txn_df, model):
     # Make predictions
     predictions = model.transform(df_features)
     
-    # Extract retry success probability
+    # Extract retry success probability using UDF
     predictions = predictions.withColumn(
         "retry_success_probability",
-        F.col("probability")[1]
+        extract_probability(F.col("probability"))
     )
     
     # Apply business rules from retry policies
@@ -671,6 +700,55 @@ display(df_recommendations_by_issuer)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC # 📊 Smart Retry Impact Analysis
+# MAGIC
+# MAGIC This table summarizes how declined transactions can be recovered with smart retry strategies:
+# MAGIC
+# MAGIC | Metric                          | Description                                                                                 |
+# MAGIC |----------------------------------|---------------------------------------------------------------------------------------------|
+# MAGIC | **total_declined_transactions**  | Total number of payments that were declined (failed)                                        |
+# MAGIC | **immediate_retry_count**        | Number to retry right away (high chance of success)                                         |
+# MAGIC | **delayed_retry_count**          | Number to retry later (e.g., after payday)                                                  |
+# MAGIC | **no_retry_count**               | Number that should NOT be retried (will fail again)                                         |
+# MAGIC | **avg_retry_success_prob_pct**   | Average probability that retries will succeed (e.g., 45% means almost half will work)       |
+# MAGIC | **estimated_recoverable_transactions** | Estimated number of declined payments we can recover by retrying smartly           |
+# MAGIC
+# MAGIC **Example:**  
+# MAGIC If you have **1,000** declined transactions:  
+# MAGIC - **300** should retry now (will likely succeed)  
+# MAGIC - **200** should retry later (wait for better timing)  
+# MAGIC - **500** should NOT retry (will fail again anyway)  
+# MAGIC
+# MAGIC ---
+# MAGIC
+# MAGIC # 💰 Estimated Value Recovery
+# MAGIC
+# MAGIC This table shows the potential dollar value that can be recovered:
+# MAGIC
+# MAGIC | Metric                              | Description                                                                                 |
+# MAGIC |--------------------------------------|---------------------------------------------------------------------------------------------|
+# MAGIC | **avg_declined_amount**              | Average dollar amount of declined transactions (e.g., $125.50 per transaction)              |
+# MAGIC | **estimated_recovered_value**        | Total dollar amount recoverable by retrying the right transactions at the right time        |
+# MAGIC | **total_declined_with_recommendations** | Number of declined transactions with retry recommendations                             |
+# MAGIC
+# MAGIC **Example Calculation:**  
+# MAGIC - Average declined transaction: **$100**  
+# MAGIC - **500** transactions should be retried  
+# MAGIC - Success probability: **40%**  
+# MAGIC - **Estimated recovered value:** $100 × 500 × 40% = **$20,000**  
+# MAGIC
+# MAGIC ---
+# MAGIC
+# MAGIC # 🎯 Bottom Line
+# MAGIC
+# MAGIC These metrics answer the key business question:  
+# MAGIC **"How much money are we losing to declines, and how much can we recover by being smart about retries?"**
+# MAGIC
+# MAGIC Instead of blindly retrying everything (which annoys customers and wastes resources), the ML model identifies which declined transactions are worth retrying—and when—to maximize recovery! 💡
+
+# COMMAND ----------
+
 # Calculate impact metrics
 df_impact = spark.sql(f"""
 SELECT 
@@ -706,7 +784,7 @@ display(df_value_recovery)
 
 # MAGIC %md
 # MAGIC ## Streaming Retry Recommendations
-# MAGIC 
+# MAGIC
 # MAGIC For production deployment, we'd set up a streaming job to generate real-time retry recommendations.
 
 # COMMAND ----------
@@ -714,7 +792,7 @@ display(df_value_recovery)
 # Example of how to set up streaming retry recommendations
 # (Would run continuously in production)
 
-"""
+# """
 # Read streaming declined transactions
 df_declined_stream = spark.readStream \
     .format("delta") \
@@ -729,11 +807,11 @@ query_retry = df_streaming_recommendations.writeStream \
     .format("delta") \
     .outputMode("append") \
     .option("checkpointLocation", f"{CHECKPOINT_PATH}/smart_retry_recommendations") \
-    .trigger(processingTime="10 seconds") \
+    .trigger(processingTime="5 seconds") \
     .toTable(f"{CATALOG}.{SCHEMA_GOLD}.smart_retry_recommendations_stream")
 
 print("✅ Streaming retry recommendations started")
-"""
+# """
 
 print("ℹ️  Streaming retry recommendation setup available (commented out for demo)")
 
@@ -741,29 +819,29 @@ print("ℹ️  Streaming retry recommendation setup available (commented out for
 
 # MAGIC %md
 # MAGIC ## Summary
-# MAGIC 
+# MAGIC
 # MAGIC ✅ **Smart Retry Module Complete**:
 # MAGIC - ML-based retry success prediction with Gradient Boosted Trees
 # MAGIC - Model AUC: High accuracy in predicting retry success
 # MAGIC - Feature importance analysis showing key drivers
 # MAGIC - Real-time retry recommendations with action classification
-# MAGIC 
+# MAGIC
 # MAGIC ✅ **Key Features**:
 # MAGIC - **Retry Timing Optimization**: Learns optimal retry windows by issuer and reason code
 # MAGIC - **Probability Scoring**: Predicts retry success probability for each transaction
 # MAGIC - **Business Rules Integration**: Combines ML predictions with policy constraints
 # MAGIC - **Action Classification**: RETRY_NOW, RETRY_LATER, or DO_NOT_RETRY
-# MAGIC 
+# MAGIC
 # MAGIC **Impact Metrics**:
 # MAGIC - Estimated recovery rate: 30-70% depending on reason code and timing
 # MAGIC - Reduced wasteful retries: Filters out low-probability attempts
 # MAGIC - Optimized timing: Salary days, business hours, and issuer-specific windows
-# MAGIC 
+# MAGIC
 # MAGIC **Model Performance**:
 # MAGIC - Top features: hours_since_decline, issuer_success_rate_7d, reason_code, is_salary_day
 # MAGIC - Accurate predictions across issuers and channels
 # MAGIC - Handles imbalanced data with appropriate weighting
-# MAGIC 
+# MAGIC
 # MAGIC **Next Steps**:
 # MAGIC - Notebook 05: Databricks SQL dashboards and Genie examples
 # MAGIC - Notebook 06: Databricks App UI for live monitoring and control

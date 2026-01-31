@@ -1,7 +1,7 @@
 -- Databricks notebook source
 -- MAGIC %md
 -- MAGIC # 05 - Dashboards, SQL Analytics & Genie Examples
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Overview
 -- MAGIC This notebook creates:
 -- MAGIC - **Executive KPI Dashboard**: High-level approval rates, uplift, and trends
@@ -9,7 +9,7 @@
 -- MAGIC - **Reason Code Analytics**: Decline analysis and remediation tracking
 -- MAGIC - **Smart Retry Dashboard**: Retry recommendations and recovery rates
 -- MAGIC - **Genie Examples**: Natural language queries for business users
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Target Audience
 -- MAGIC - Executives: KPI monitoring and strategic insights
 -- MAGIC - Product Managers: Feature performance and optimization opportunities
@@ -35,6 +35,65 @@ USE SCHEMA gold;
 
 -- MAGIC %md
 -- MAGIC ### Overall Performance Metrics
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Overall Performance Metrics
+-- Create a view for transaction approval performance and Smart Checkout impact
+CREATE OR REPLACE VIEW transaction_approval_performance_smart_checkout
+AS
+SELECT
+    COUNT(*) AS total_transactions,
+    COUNT(DISTINCT cardholder_id) AS unique_cardholders,
+    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS approval_rate_pct,
+    ROUND(AVG(approval_uplift_pct), 2) AS avg_approval_uplift_pct,
+    ROUND(AVG(expected_approval_prob) * 100, 2) AS avg_expected_approval_pct,
+    ROUND(AVG(adjusted_risk_score), 3) AS avg_adjusted_risk_score,
+    ROUND(AVG(solution_cost), 2) AS avg_solution_cost_usd
+FROM payments_lakehouse.silver.payments_enriched_stream;
+
+SELECT * FROM transaction_approval_performance_smart_checkout;
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Cell 7
+-- Create a view for transaction approval performance by reason code
+CREATE OR REPLACE VIEW transaction_approval_performance_smart_reason_code
+AS
+SELECT
+    reason_code,
+    COUNT(*) AS total_transactions,
+    COUNT(DISTINCT cardholder_id) AS unique_cardholders,
+    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS approval_rate_pct,
+    ROUND(AVG(approval_uplift_pct), 2) AS avg_approval_uplift_pct,
+    ROUND(AVG(expected_approval_prob) * 100, 2) AS avg_expected_approval_pct,
+    ROUND(AVG(adjusted_risk_score), 3) AS avg_adjusted_risk_score,
+    ROUND(SUM(amount), 2) AS total_transaction_value
+FROM payments_lakehouse.silver.payments_enriched_stream
+GROUP BY reason_code
+ORDER BY total_transactions DESC;
+
+SELECT * FROM transaction_approval_performance_smart_reason_code;
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Cell 8
+-- Create a view for Smart Retry performance metrics
+CREATE OR REPLACE VIEW transaction_approval_performance_smart_retry
+AS
+SELECT
+    COUNT(*) AS total_declined_transactions,
+    COUNT(DISTINCT transaction_id) AS unique_transactions,
+    ROUND(AVG(retry_success_probability) * 100, 2) AS avg_retry_success_prob_pct,
+    ROUND(SUM(CASE WHEN retry_action = 'RETRY_NOW' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS immediate_retry_pct,
+    ROUND(SUM(CASE WHEN retry_action = 'RETRY_LATER' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS delayed_retry_pct,
+    ROUND(SUM(CASE WHEN retry_action = 'DO_NOT_RETRY' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS no_retry_pct,
+    ROUND(AVG(suggested_delay_hours), 2) AS avg_suggested_delay_hours,
+    ROUND(AVG(expected_approval_change_pct), 2) AS avg_expected_approval_change_pct,
+    ROUND(AVG(composite_risk_score), 3) AS avg_composite_risk_score
+FROM payments_lakehouse.gold.smart_retry_recommendations;
+
+SELECT * FROM transaction_approval_performance_smart_retry;
 
 -- COMMAND ----------
 
@@ -290,11 +349,13 @@ SELECT * FROM payments_lakehouse.gold.decline_heatmap_issuer_reason;
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Create Dashboard SQL Queries
 -- MAGIC %md
 -- MAGIC ### Decline Trends Analysis
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Dashboard Query: Approval Trend
 CREATE OR REPLACE VIEW v_decline_trends_analysis AS
 SELECT 
     hour,
@@ -310,16 +371,19 @@ SELECT * FROM v_decline_trends_analysis LIMIT 100;
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Dashboard Query: Solution Performance
 -- MAGIC %md
 -- MAGIC ## 4. Smart Retry Dashboard
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Dashboard Query: Geographic Heatmap
 -- MAGIC %md
 -- MAGIC ### Retry Recommendation Summary
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Dashboard Query: Top Declines
 CREATE OR REPLACE VIEW v_retry_recommendation_summary AS
 SELECT 
     retry_action,
@@ -336,10 +400,12 @@ SELECT * FROM v_retry_recommendation_summary;
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Dashboard Query: Retry Distribution
 COMMENT ON VIEW v_retry_recommendation_summary IS 'Summary of Smart Retry recommendations by action type with success probabilities';
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Dashboard Query: Revenue Recovery
 -- MAGIC %md
 -- MAGIC ### Retry Recommendations by Reason Code
 
@@ -368,6 +434,7 @@ SELECT * FROM v_retry_by_reason_code;
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Create Genie-Optimized Views
 CREATE OR REPLACE VIEW v_retry_value_recovery AS
 SELECT 
     rec.retry_action,
@@ -386,15 +453,18 @@ SELECT * FROM v_retry_value_recovery;
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Genie View: Solution Summary
 COMMENT ON VIEW v_retry_value_recovery IS 'Estimated financial value recovery from Smart Retry recommendations';
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Genie View: Decline Summary
 -- MAGIC %md
 -- MAGIC ### Retry Model Feature Importance
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Genie View: Retry Summary
 SELECT 
     feature,
     ROUND(importance, 4) as importance_score,
@@ -402,11 +472,6 @@ SELECT
 FROM payments_lakehouse.gold.retry_model_feature_importance
 ORDER BY importance DESC
 LIMIT 15;
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC ## 5. Cross-Functional Analytics
 
 -- COMMAND ----------
 
@@ -514,32 +579,32 @@ SELECT * FROM v_merchant_segment_performance;
 
 -- MAGIC %md
 -- MAGIC ## 6. Genie Examples & Natural Language Queries
--- MAGIC 
+-- MAGIC
 -- MAGIC Below are example queries that business users can ask using Databricks Genie.
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### Genie Query Examples
--- MAGIC 
+-- MAGIC
 -- MAGIC **For Executives:**
 -- MAGIC 1. "What is our overall approval rate this week?"
 -- MAGIC 2. "Show me approval rate trends by geography"
 -- MAGIC 3. "What's the estimated value we're recovering through Smart Retry?"
 -- MAGIC 4. "Which payment solution mix has the highest approval rate?"
--- MAGIC 
+-- MAGIC
 -- MAGIC **For Product Managers:**
 -- MAGIC 1. "Which solution combinations are most cost-effective?"
 -- MAGIC 2. "How does Smart Checkout performance vary by channel?"
 -- MAGIC 3. "What's the average approval uplift from using NetworkToken?"
 -- MAGIC 4. "Show me the top 5 merchants by transaction volume and their approval rates"
--- MAGIC 
+-- MAGIC
 -- MAGIC **For Risk/Fraud Teams:**
 -- MAGIC 1. "What are the most common security violation decline codes?"
 -- MAGIC 2. "Show me high-risk transactions that were approved and their solution mix"
 -- MAGIC 3. "Which geographies have the highest fraud risk scores?"
 -- MAGIC 4. "How effective is 3DS at reducing risk scores?"
--- MAGIC 
+-- MAGIC
 -- MAGIC **For Data Analysts:**
 -- MAGIC 1. "Explain the main drivers of decline rate increase in LATAM ecommerce last week"
 -- MAGIC 2. "For merchant cluster high_risk, which mix of payment solutions increased approval rates the most?"
@@ -684,7 +749,7 @@ SELECT * FROM v_active_alerts;
 
 -- MAGIC %md
 -- MAGIC ## Summary
--- MAGIC 
+-- MAGIC
 -- MAGIC ✅ **Dashboard Views Created**:
 -- MAGIC - Executive KPI dashboard (9 views)
 -- MAGIC - Smart Checkout performance analytics (4 views)
@@ -692,24 +757,24 @@ SELECT * FROM v_active_alerts;
 -- MAGIC - Smart Retry dashboard (3 views)
 -- MAGIC - Cross-functional analytics (4 views)
 -- MAGIC - Real-time monitoring (2 views)
--- MAGIC 
+-- MAGIC
 -- MAGIC ✅ **Genie Integration**:
 -- MAGIC - Natural language query examples for all stakeholder personas
 -- MAGIC - Simplified views optimized for Genie queries
 -- MAGIC - Business-friendly field names and descriptions
--- MAGIC 
+-- MAGIC
 -- MAGIC **Key Dashboards**:
 -- MAGIC 1. **Executive Dashboard**: Approval rates, uplift, risk metrics, financial impact
 -- MAGIC 2. **Smart Checkout Dashboard**: Solution mix performance, geographic breakdown
 -- MAGIC 3. **Reason Code Dashboard**: Decline analysis, actionable insights, heatmaps
 -- MAGIC 4. **Smart Retry Dashboard**: Recommendations, value recovery, model performance
 -- MAGIC 5. **Real-Time Monitoring**: Last hour metrics, active alerts
--- MAGIC 
+-- MAGIC
 -- MAGIC **Usage**:
 -- MAGIC - All views are queryable via Databricks SQL
 -- MAGIC - Can be used to build visual dashboards in Databricks SQL Analytics
 -- MAGIC - Compatible with Genie for natural language queries
 -- MAGIC - Support real-time monitoring and alerting
--- MAGIC 
+-- MAGIC
 -- MAGIC **Next Steps**:
 -- MAGIC - Notebook 06: Databricks App UI for interactive live monitoring
