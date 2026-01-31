@@ -10,7 +10,13 @@
 command: [
   'streamlit',
   'run',
-  'app.py'
+  'app.py',
+  '--server.port=8501',
+  '--server.address=0.0.0.0',
+  '--server.headless=true',
+  '--server.enableCORS=false',
+  '--server.enableXsrfProtection=false',
+  '--browser.gatherUsageStats=false'
 ]
 
 env:
@@ -107,11 +113,11 @@ resources:
 healthCheck:
   path: "/_stcore/health"
   port: 8501
-  initialDelaySeconds: 60
-  periodSeconds: 10     # More frequent checks
-  timeoutSeconds: 5
+  initialDelaySeconds: 120   # Increased to 2 minutes for slower startups
+  periodSeconds: 15          # Check every 15 seconds
+  timeoutSeconds: 10         # Longer timeout for health check
   successThreshold: 1
-  failureThreshold: 3
+  failureThreshold: 5        # More tolerance for failures
 
 # Application Metadata
 metadata:

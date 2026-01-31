@@ -460,16 +460,19 @@ def load_data_from_delta(table_name, limit=10000):
     """Load data from Delta table with caching"""
     try:
         # Try to connect to Databricks
+        from pyspark.sql import SparkSession
         from databricks import sql
         import os
         
-        # In Databricks environment, connection is automatic
+        # Try to get existing Spark session (in Databricks environment)
+        spark = SparkSession.builder.getOrCreate()
+        
         query = f"SELECT * FROM {table_name} LIMIT {limit}"
         df = spark.sql(query).toPandas()
         return df
     except Exception as e:
         # Fallback to synthetic data for demo/local testing
-        st.warning(f"Using synthetic data for demonstration. Error: {str(e)}")
+        st.warning(f"Using synthetic data for demonstration. Connection to database not available.")
         return generate_synthetic_data(table_name)
 
 @st.cache_data(ttl=60)  # Cache for 1 minute for real-time feel
