@@ -44,13 +44,13 @@ CREATE OR REPLACE VIEW transaction_approval_performance_smart_checkout
 AS
 SELECT
     COUNT(*) AS total_transactions,
-    COUNT(DISTINCT cardholder_id) AS unique_cardholders,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) AS avg_approval_uplift_pct,
-    ROUND(AVG(expected_approval_prob) * 100, 2) AS avg_expected_approval_pct,
-    ROUND(AVG(adjusted_risk_score), 3) AS avg_adjusted_risk_score,
-    ROUND(AVG(solution_cost), 2) AS avg_solution_cost_usd
-FROM payments_lakehouse.silver.payments_enriched_stream;
+    COUNT(DISTINCT t.cardholder_id) AS unique_cardholders,
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) AS avg_approval_uplift_pct,
+    ROUND(AVG(t.expected_approval_prob) * 100, 2) AS avg_expected_approval_pct,
+    ROUND(AVG(t.adjusted_risk_score), 3) AS avg_adjusted_risk_score,
+    ROUND(AVG(t.solution_cost), 2) AS avg_solution_cost_usd
+FROM payments_lakehouse.silver.payments_enriched_stream t ;
 
 SELECT * FROM transaction_approval_performance_smart_checkout;
 
@@ -61,16 +61,15 @@ SELECT * FROM transaction_approval_performance_smart_checkout;
 CREATE OR REPLACE VIEW transaction_approval_performance_smart_reason_code
 AS
 SELECT
-    reason_code,
+    t.reason_code,
     COUNT(*) AS total_transactions,
-    COUNT(DISTINCT cardholder_id) AS unique_cardholders,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) AS avg_approval_uplift_pct,
-    ROUND(AVG(expected_approval_prob) * 100, 2) AS avg_expected_approval_pct,
-    ROUND(AVG(adjusted_risk_score), 3) AS avg_adjusted_risk_score,
-    ROUND(SUM(amount), 2) AS total_transaction_value
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY reason_code
+    COUNT(DISTINCT t.cardholder_id) AS unique_cardholders,
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) AS avg_approval_uplift_pct,
+    ROUND(AVG(t.expected_approval_prob) * 100, 2) AS avg_expected_approval_pct,
+    ROUND(AVG(t.adjusted_risk_score), 3) AS avg_adjusted_risk_score,
+    ROUND(SUM(t.amount), 2) AS total_transaction_value
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY t.reason_code
 ORDER BY total_transactions DESC;
 
 SELECT * FROM transaction_approval_performance_smart_reason_code;
@@ -83,14 +82,14 @@ CREATE OR REPLACE VIEW transaction_approval_performance_smart_retry
 AS
 SELECT
     COUNT(*) AS total_declined_transactions,
-    COUNT(DISTINCT transaction_id) AS unique_transactions,
+    COUNT(DISTINCT t.transaction_id) AS unique_transactions,
     ROUND(AVG(retry_success_probability) * 100, 2) AS avg_retry_success_prob_pct,
     ROUND(SUM(CASE WHEN retry_action = 'RETRY_NOW' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS immediate_retry_pct,
     ROUND(SUM(CASE WHEN retry_action = 'RETRY_LATER' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS delayed_retry_pct,
     ROUND(SUM(CASE WHEN retry_action = 'DO_NOT_RETRY' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS no_retry_pct,
     ROUND(AVG(suggested_delay_hours), 2) AS avg_suggested_delay_hours,
     ROUND(AVG(expected_approval_change_pct), 2) AS avg_expected_approval_change_pct,
-    ROUND(AVG(composite_risk_score), 3) AS avg_composite_risk_score
+    ROUND(AVG(t.composite_risk_score), 3) AS avg_composite_risk_score
 FROM payments_lakehouse.gold.smart_retry_recommendations;
 
 SELECT * FROM transaction_approval_performance_smart_retry;
@@ -102,32 +101,32 @@ CREATE OR REPLACE VIEW v_executive_kpis AS
 SELECT 
     -- Transaction volumes
     COUNT(*) as total_transactions,
-    COUNT(DISTINCT cardholder_id) as unique_cardholders,
-    COUNT(DISTINCT merchant_id) as unique_merchants,
+    COUNT(DISTINCT t.cardholder_id) as unique_cardholders,
+    COUNT(DISTINCT t.merchant_id) as unique_merchants,
     
     -- Approval metrics
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) as approved_count,
-    SUM(CASE WHEN NOT is_approved THEN 1 ELSE 0 END) as declined_count,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) as approved_count,
+    SUM(CASE WHEN NOT t.is_approved THEN 1 ELSE 0 END) as declined_count,
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
     
     -- Smart Checkout uplift
-    ROUND(AVG(approval_uplift_pct), 2) as avg_approval_uplift_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_approval_uplift_pct,
     
     -- Risk metrics
-    ROUND(AVG(composite_risk_score), 3) as avg_risk_score,
-    ROUND(AVG(adjusted_risk_score), 3) as avg_adjusted_risk_score,
-    ROUND((AVG(composite_risk_score) - AVG(adjusted_risk_score)) * 100, 2) as risk_reduction_pct,
+    ROUND(AVG(t.composite_risk_score), 3) as avg_risk_score,
+    ROUND(AVG(t.adjusted_risk_score), 3) as avg_adjusted_risk_score,
+    ROUND((AVG(t.composite_risk_score) - AVG(t.adjusted_risk_score)) * 100, 2) as risk_reduction_pct,
     
     -- Financial metrics
-    ROUND(SUM(amount), 2) as total_transaction_value,
-    ROUND(SUM(CASE WHEN is_approved THEN amount ELSE 0 END), 2) as approved_value,
-    ROUND(SUM(CASE WHEN NOT is_approved THEN amount ELSE 0 END), 2) as declined_value,
-    ROUND(AVG(solution_cost), 2) as avg_solution_cost,
+    ROUND(SUM(t.amount), 2) as total_transaction_value,
+    ROUND(SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END), 2) as approved_value,
+    ROUND(SUM(CASE WHEN NOT t.is_approved THEN t.amount ELSE 0 END), 2) as declined_value,
+    ROUND(AVG(t.solution_cost), 2) as avg_solution_cost,
     
     -- Time period
-    MIN(timestamp) as period_start,
-    MAX(timestamp) as period_end
-FROM payments_lakehouse.silver.payments_enriched_stream;
+    MIN(t.timestamp) as period_start,
+    MAX(t.timestamp) as period_end
+FROM payments_lakehouse.silver.payments_enriched_stream t ;
 
 -- Query the view
 SELECT * FROM v_executive_kpis;
@@ -145,14 +144,13 @@ COMMENT ON VIEW v_executive_kpis IS 'Executive KPI summary including approval ra
 
 CREATE OR REPLACE VIEW v_approval_trends_hourly AS
 SELECT 
-    DATE_TRUNC('hour', timestamp) as hour,
+    DATE_TRUNC('hour', t.timestamp) as hour,
     COUNT(*) as transaction_count,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct,
-    ROUND(AVG(composite_risk_score), 3) as avg_risk_score,
-    ROUND(SUM(amount), 2) as total_value
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY DATE_TRUNC('hour', timestamp)
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct,
+    ROUND(AVG(t.composite_risk_score), 3) as avg_risk_score,
+    ROUND(SUM(t.amount), 2) as total_value
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY DATE_TRUNC('hour', t.timestamp)
 ORDER BY hour DESC;
 
 SELECT * FROM v_approval_trends_hourly LIMIT 48;
@@ -168,15 +166,14 @@ CREATE OR REPLACE VIEW v_performance_by_geography AS
 SELECT 
     cardholder_country as geography,
     COUNT(*) as transaction_count,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct,
-    ROUND(AVG(composite_risk_score), 3) as avg_risk_score,
-    ROUND(AVG(country_risk_score), 3) as avg_country_risk,
-    ROUND(SUM(amount), 2) as total_transaction_value,
-    COUNT(DISTINCT merchant_id) as unique_merchants,
-    COUNT(DISTINCT cardholder_id) as unique_cardholders
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY cardholder_country
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct,
+    ROUND(AVG(t.composite_risk_score), 3) as avg_risk_score,
+    ROUND(AVG(t.country_risk_score), 3) as avg_country_risk,
+    ROUND(SUM(t.amount), 2) as total_transaction_value,
+    COUNT(DISTINCT t.merchant_id) as unique_merchants,
+    COUNT(DISTINCT t.cardholder_id) as unique_cardholders
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY t.cardholder_country
 ORDER BY transaction_count DESC;
 
 SELECT * FROM v_performance_by_geography LIMIT 20;
@@ -198,14 +195,13 @@ SELECT
     recommended_solution_name as solution_mix,
     COUNT(*) as transaction_count,
     ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) as pct_of_total,
-    ROUND(AVG(expected_approval_prob) * 100, 2) as avg_expected_approval_pct,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as actual_approval_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct,
-    ROUND(AVG(adjusted_risk_score), 3) as avg_risk_score,
-    ROUND(AVG(solution_cost), 2) as avg_cost_usd,
-    ROUND(SUM(amount), 2) as total_transaction_value
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY recommended_solution_name
+    ROUND(AVG(t.expected_approval_prob) * 100, 2) as avg_expected_approval_pct,
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as actual_approval_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct,
+    ROUND(AVG(t.adjusted_risk_score), 3) as avg_risk_score,
+    ROUND(AVG(t.solution_cost), 2) as avg_cost_usd,
+    ROUND(SUM(t.amount), 2) as total_transaction_value
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY t.recommended_solution_name
 ORDER BY transaction_count DESC;
 
 SELECT * FROM v_smart_checkout_solution_performance;
@@ -226,11 +222,10 @@ SELECT
     cardholder_country as geography,
     recommended_solution_name as solution_mix,
     COUNT(*) as transaction_count,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct,
-    ROUND(AVG(solution_cost), 2) as avg_cost_usd
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY cardholder_country, recommended_solution_name
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct,
+    ROUND(AVG(t.solution_cost), 2) as avg_cost_usd
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY t.cardholder_country, t.recommended_solution_name
 HAVING COUNT(*) > 10
 ORDER BY geography, transaction_count DESC;
 
@@ -248,10 +243,9 @@ SELECT
     card_network as issuer,
     recommended_solution_name as solution_mix,
     COUNT(*) as transaction_count,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY card_network, recommended_solution_name
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY t.card_network, t.recommended_solution_name
 ORDER BY issuer, transaction_count DESC;
 
 SELECT * FROM v_solution_performance_by_issuer;
@@ -259,21 +253,20 @@ SELECT * FROM v_solution_performance_by_issuer;
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ### Solution Performance by Channel
+-- MAGIC ### Solution Performance by t.Channel
 
 -- COMMAND ----------
 
 CREATE OR REPLACE VIEW v_solution_performance_by_channel AS
 SELECT 
-    channel,
+    t.channel,
     recommended_solution_name as solution_mix,
     COUNT(*) as transaction_count,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct,
-    ROUND(AVG(amount), 2) as avg_amount
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY channel, recommended_solution_name
-ORDER BY channel, transaction_count DESC;
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct,
+    ROUND(AVG(t.amount), 2) as avg_amount
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY t.channel, t.recommended_solution_name
+ORDER BY t.channel, transaction_count DESC;
 
 SELECT * FROM v_solution_performance_by_channel;
 
@@ -359,11 +352,11 @@ SELECT * FROM payments_lakehouse.gold.decline_heatmap_issuer_reason;
 CREATE OR REPLACE VIEW v_decline_trends_analysis AS
 SELECT 
     hour,
-    reason_code,
+    t.reason_code,
     decline_count,
     avg_risk_score,
-    SUM(decline_count) OVER (PARTITION BY reason_code ORDER BY hour ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as rolling_7hr_count,
-    AVG(decline_count) OVER (PARTITION BY reason_code ORDER BY hour ROWS BETWEEN 23 PRECEDING AND CURRENT ROW) as rolling_24hr_avg
+    SUM(decline_count) OVER (PARTITION BY t.reason_code ORDER BY hour ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as rolling_7hr_count,
+    AVG(decline_count) OVER (PARTITION BY t.reason_code ORDER BY hour ROWS BETWEEN 23 PRECEDING AND CURRENT ROW) as rolling_24hr_avg
 FROM payments_lakehouse.gold.decline_trends
 ORDER BY hour DESC, decline_count DESC;
 
@@ -486,27 +479,21 @@ SELECT
     1 as stage_order,
     COUNT(*) as transaction_count,
     100.0 as pct_of_initial
-FROM payments_lakehouse.silver.payments_enriched_stream
-
-UNION ALL
+FROM payments_lakehouse.silver.payments_enriched_stream t UNION ALL
 
 SELECT 
     'After Smart Checkout' as stage,
     2 as stage_order,
     COUNT(*) as transaction_count,
     ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM payments_lakehouse.silver.payments_enriched_stream), 2) as pct_of_initial
-FROM payments_lakehouse.silver.payments_enriched_stream
-
-UNION ALL
+FROM payments_lakehouse.silver.payments_enriched_stream t UNION ALL
 
 SELECT 
     'Approved' as stage,
     3 as stage_order,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) as transaction_count,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / (SELECT COUNT(*) FROM payments_lakehouse.silver.payments_enriched_stream), 2) as pct_of_initial
-FROM payments_lakehouse.silver.payments_enriched_stream
-
-UNION ALL
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) as transaction_count,
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / (SELECT COUNT(*) FROM payments_lakehouse.silver.payments_enriched_stream), 2) as pct_of_initial
+FROM payments_lakehouse.silver.payments_enriched_stream t UNION ALL
 
 SELECT 
     'Declined (Retry Candidates)' as stage,
@@ -530,23 +517,22 @@ SELECT * FROM v_approval_funnel;
 CREATE OR REPLACE VIEW v_risk_approval_matrix AS
 SELECT 
     CASE 
-        WHEN composite_risk_score < 0.3 THEN 'Low Risk (0-0.3)'
-        WHEN composite_risk_score < 0.6 THEN 'Medium Risk (0.3-0.6)'
-        WHEN composite_risk_score < 0.85 THEN 'High Risk (0.6-0.85)'
+        WHEN t.composite_risk_score < 0.3 THEN 'Low Risk (0-0.3)'
+        WHEN t.composite_risk_score < 0.6 THEN 'Medium Risk (0.3-0.6)'
+        WHEN t.composite_risk_score < 0.85 THEN 'High Risk (0.6-0.85)'
         ELSE 'Critical Risk (0.85+)'
     END as risk_segment,
     COUNT(*) as transaction_count,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct,
-    ROUND(AVG(solution_cost), 2) as avg_solution_cost,
-    ROUND(AVG(composite_risk_score), 3) as avg_risk_score,
-    ROUND(AVG(adjusted_risk_score), 3) as avg_adjusted_risk
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY 
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct,
+    ROUND(AVG(t.solution_cost), 2) as avg_solution_cost,
+    ROUND(AVG(t.composite_risk_score), 3) as avg_risk_score,
+    ROUND(AVG(t.adjusted_risk_score), 3) as avg_adjusted_risk
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY 
     CASE 
-        WHEN composite_risk_score < 0.3 THEN 'Low Risk (0-0.3)'
-        WHEN composite_risk_score < 0.6 THEN 'Medium Risk (0.3-0.6)'
-        WHEN composite_risk_score < 0.85 THEN 'High Risk (0.6-0.85)'
+        WHEN t.composite_risk_score < 0.3 THEN 'Low Risk (0-0.3)'
+        WHEN t.composite_risk_score < 0.6 THEN 'Medium Risk (0.3-0.6)'
+        WHEN t.composite_risk_score < 0.85 THEN 'High Risk (0.6-0.85)'
         ELSE 'Critical Risk (0.85+)'
     END
 ORDER BY avg_risk_score;
@@ -562,16 +548,15 @@ SELECT * FROM v_risk_approval_matrix;
 
 CREATE OR REPLACE VIEW v_merchant_segment_performance AS
 SELECT 
-    merchant_cluster,
+    t.merchant_cluster,
     COUNT(*) as transaction_count,
-    COUNT(DISTINCT merchant_id) as unique_merchants,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct,
-    ROUND(AVG(merchant_risk_score), 3) as avg_merchant_risk,
-    ROUND(SUM(amount), 2) as total_transaction_value
-FROM payments_lakehouse.silver.payments_enriched_stream
-GROUP BY merchant_cluster
-ORDER BY merchant_cluster;
+    COUNT(DISTINCT t.merchant_id) as unique_merchants,
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct,
+    ROUND(AVG(t.merchant_risk_score), 3) as avg_merchant_risk,
+    ROUND(SUM(t.amount), 2) as total_transaction_value
+FROM payments_lakehouse.silver.payments_enriched_stream t GROUP BY t.merchant_cluster
+ORDER BY t.merchant_cluster;
 
 SELECT * FROM v_merchant_segment_performance;
 
@@ -595,7 +580,7 @@ SELECT * FROM v_merchant_segment_performance;
 -- MAGIC
 -- MAGIC **For Product Managers:**
 -- MAGIC 1. "Which solution combinations are most cost-effective?"
--- MAGIC 2. "How does Smart Checkout performance vary by channel?"
+-- MAGIC 2. "How does Smart Checkout performance vary by t.channel?"
 -- MAGIC 3. "What's the average approval uplift from using NetworkToken?"
 -- MAGIC 4. "Show me the top 5 merchants by transaction volume and their approval rates"
 -- MAGIC
@@ -623,11 +608,11 @@ CREATE OR REPLACE VIEW v_genie_current_performance AS
 SELECT 
     'Overall' as segment,
     COUNT(*) as total_transactions,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_from_smart_checkout_pct,
-    ROUND(AVG(composite_risk_score), 3) as avg_risk_score,
-    ROUND(SUM(amount), 2) as total_value_usd
-FROM payments_lakehouse.silver.payments_enriched_stream;
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_from_smart_checkout_pct,
+    ROUND(AVG(t.composite_risk_score), 3) as avg_risk_score,
+    ROUND(SUM(t.amount), 2) as total_value_usd
+FROM payments_lakehouse.silver.payments_enriched_stream t ;
 
 SELECT * FROM v_genie_current_performance;
 
@@ -636,7 +621,7 @@ SELECT * FROM v_genie_current_performance;
 -- Simple view for Genie: Decline insights
 CREATE OR REPLACE VIEW v_genie_decline_insights AS
 SELECT 
-    reason_code,
+    t.reason_code,
     description as reason_description,
     category as decline_category,
     severity,
@@ -644,7 +629,7 @@ SELECT
     ARRAY_JOIN(recommended_actions, '; ') as recommended_actions
 FROM payments_lakehouse.bronze.reason_code_dim
 WHERE is_actionable = true
-ORDER BY severity DESC, reason_code;
+ORDER BY severity DESC, t.reason_code;
 
 SELECT * FROM v_genie_decline_insights;
 
@@ -684,14 +669,13 @@ SELECT * FROM v_genie_solution_recommendations;
 CREATE OR REPLACE VIEW v_last_hour_performance AS
 SELECT 
     COUNT(*) as transactions_last_hour,
-    ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
-    ROUND(AVG(approval_uplift_pct), 2) as avg_uplift_pct,
-    COUNT(DISTINCT cardholder_id) as unique_cardholders,
-    COUNT(DISTINCT merchant_id) as unique_merchants,
-    ROUND(SUM(amount), 2) as total_value_usd,
-    ROUND(AVG(composite_risk_score), 3) as avg_risk_score
-FROM payments_lakehouse.silver.payments_enriched_stream
-WHERE timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR;
+    ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as approval_rate_pct,
+    ROUND(AVG(t.approval_uplift_pct), 2) as avg_uplift_pct,
+    COUNT(DISTINCT t.cardholder_id) as unique_cardholders,
+    COUNT(DISTINCT t.merchant_id) as unique_merchants,
+    ROUND(SUM(t.amount), 2) as total_value_usd,
+    ROUND(AVG(t.composite_risk_score), 3) as avg_risk_score
+FROM payments_lakehouse.silver.payments_enriched_stream t WHERE t.timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR;
 
 SELECT * FROM v_last_hour_performance;
 
@@ -708,12 +692,11 @@ SELECT
     'Approval Rate Drop' as alert_type,
     'High' as severity,
     CONCAT('Approval rate in last hour: ', 
-           CAST(ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS STRING),
+           CAST(ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS STRING),
            '%') as alert_message,
     CURRENT_TIMESTAMP() as alert_timestamp
-FROM payments_lakehouse.silver.payments_enriched_stream
-WHERE timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
-HAVING ROUND(SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) < 75
+FROM payments_lakehouse.silver.payments_enriched_stream t WHERE t.timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
+HAVING ROUND(SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) < 75
 
 UNION ALL
 
@@ -721,12 +704,11 @@ UNION ALL
 SELECT 
     'High Decline Volume' as alert_type,
     'Medium' as severity,
-    CONCAT('Elevated ', reason_code, ' declines: ', CAST(COUNT(*) AS STRING), ' in last hour') as alert_message,
+    CONCAT('Elevated ', t.reason_code, ' declines: ', CAST(COUNT(*) AS STRING), ' in last hour') as alert_message,
     CURRENT_TIMESTAMP() as alert_timestamp
-FROM payments_lakehouse.silver.payments_enriched_stream
-WHERE timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
-    AND NOT is_approved
-GROUP BY reason_code
+FROM payments_lakehouse.silver.payments_enriched_stream t WHERE t.timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
+    AND NOT t.is_approved
+GROUP BY t.reason_code
 HAVING COUNT(*) > 100
 
 UNION ALL
@@ -736,11 +718,10 @@ SELECT
     'High Risk Volume' as alert_type,
     'Critical' as severity,
     CONCAT('High risk transactions: ', CAST(COUNT(*) AS STRING), ' with avg risk ', 
-           CAST(ROUND(AVG(composite_risk_score), 3) AS STRING)) as alert_message,
+           CAST(ROUND(AVG(t.composite_risk_score), 3) AS STRING)) as alert_message,
     CURRENT_TIMESTAMP() as alert_timestamp
-FROM payments_lakehouse.silver.payments_enriched_stream
-WHERE timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
-    AND composite_risk_score > 0.75
+FROM payments_lakehouse.silver.payments_enriched_stream t WHERE t.timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
+    AND t.composite_risk_score > 0.75
 HAVING COUNT(*) > 50;
 
 SELECT * FROM v_active_alerts;
