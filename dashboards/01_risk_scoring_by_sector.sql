@@ -128,31 +128,31 @@ SELECT * FROM payments_lakehouse.gold.dashboard_sector_risk_hourly;
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Cell 9
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_high_risk_industries AS
 SELECT 
-  m.merchant_sector,
-  m.merchant_category,
-  m.mcc_code,
+  m.merchant_cluster,
+  m.mcc_description,
+  m.mcc,
   COUNT(DISTINCT t.transaction_id) AS total_transactions,
   COUNT(DISTINCT t.merchant_id) AS merchant_count,
-  AVG(t.risk_score) AS avg_risk_score,
-  SUM(CASE WHEN t.risk_score > 0.85 THEN 1 ELSE 0 END) AS critical_risk_count,
-  SUM(CASE WHEN t.approval_status = 'declined' THEN 1 ELSE 0 END) AS total_declines,
-  SUM(CASE WHEN t.approval_status = 'declined' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS decline_rate,
+  AVG(t.composite_risk_score) AS avg_risk_score,
+  SUM(CASE WHEN t.composite_risk_score > 0.85 THEN 1 ELSE 0 END) AS critical_risk_count,
+  SUM(CASE WHEN NOT t.is_approved THEN 1 ELSE 0 END) AS total_declines,
+  SUM(CASE WHEN NOT t.is_approved THEN 1 ELSE 0 END) / COUNT(*) * 100 AS decline_rate,
   SUM(CASE WHEN t.reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) AS security_violations,
   SUM(t.amount) AS total_volume_usd,
   AVG(t.amount) AS avg_transaction_size,
   -- Risk factors
-  AVG(t.cross_border_flag) * 100 AS pct_cross_border,
-  AVG(t.high_risk_mcc_flag) * 100 AS pct_high_risk_mcc,
+  AVG(CASE WHEN t.is_cross_border THEN 1 ELSE 0 END) * 100 AS pct_cross_border,
   -- Recommended solutions
-  SUM(CASE WHEN t.chosen_solution_stack LIKE '%3DS%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_3ds,
-  SUM(CASE WHEN t.chosen_solution_stack LIKE '%Antifraud%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_antifraud
+  SUM(CASE WHEN t.recommended_solution_name LIKE '%3DS%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_3ds,
+  SUM(CASE WHEN t.recommended_solution_name LIKE '%Antifraud%' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_using_antifraud
 FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
-  AND t.risk_score > 0.60  -- Focus on medium-high to critical risk
-GROUP BY m.merchant_sector, m.merchant_category, m.mcc_code
+  AND t.composite_risk_score > 0.60  -- Focus on medium-high to critical risk
+GROUP BY m.merchant_cluster, m.mcc_description, m.mcc
 HAVING COUNT(*) >= 50  -- Minimum volume for statistical significance
 ORDER BY avg_risk_score DESC, critical_risk_count DESC
 LIMIT 50;
