@@ -116,10 +116,10 @@ SELECT * FROM payments_lakehouse.gold.dashboard_top_countries;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_country_daily_trend AS
 WITH top_countries AS (
-  SELECT cardholder_country, SUM(amount) AS total_volume
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-  GROUP BY cardholder_country
+  SELECT t.cardholder_country, SUM(t.amount) AS total_volume
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+  GROUP BY t.cardholder_country
   ORDER BY total_volume DESC
   LIMIT 10
 )
@@ -279,11 +279,11 @@ ORDER BY t.cardholder_country, transaction_count DESC;
 
 SELECT * FROM payments_lakehouse.gold.dashboard_country_channel_breakdown
 WHERE country IN (
-  SELECT cardholder_country FROM (
-    SELECT cardholder_country, SUM(amount) AS vol 
-    FROM payments_lakehouse.silver.payments_enriched_stream 
-    WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-    GROUP BY cardholder_country ORDER BY vol DESC LIMIT 15
+  SELECT t2.cardholder_country FROM (
+    SELECT t2.cardholder_country, SUM(t2.amount) AS vol 
+    FROM payments_lakehouse.silver.payments_enriched_stream t2
+    WHERE t2.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    GROUP BY t2.cardholder_country ORDER BY vol DESC LIMIT 15
   )
 );
 
@@ -326,11 +326,11 @@ ORDER BY t.cardholder_country, hour_of_day;
 
 SELECT * FROM payments_lakehouse.gold.dashboard_country_hourly_pattern
 WHERE country IN (
-  SELECT cardholder_country FROM (
-    SELECT cardholder_country, COUNT(*) AS cnt 
-    FROM payments_lakehouse.silver.payments_enriched_stream 
-    WHERE timestamp >= current_timestamp() - INTERVAL 7 DAYS
-    GROUP BY cardholder_country ORDER BY cnt DESC LIMIT 10
+  SELECT t2.cardholder_country FROM (
+    SELECT t2.cardholder_country, COUNT(*) AS cnt 
+    FROM payments_lakehouse.silver.payments_enriched_stream t2
+    WHERE t2.timestamp >= current_timestamp() - INTERVAL 7 DAYS
+    GROUP BY t2.cardholder_country ORDER BY cnt DESC LIMIT 10
   )
 );
 
@@ -344,10 +344,10 @@ WHERE country IN (
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_country_kpis AS
 SELECT 
   -- Global totals
-  COUNT(DISTINCT cardholder_country) AS total_countries,
-  COUNT(DISTINCT transaction_id) AS total_global_transactions,
-  SUM(amount) AS total_global_volume_usd,
-  AVG(amount) AS global_avg_transaction_amount,
+  COUNT(DISTINCT t.cardholder_country) AS total_countries,
+  COUNT(DISTINCT t.transaction_id) AS total_global_transactions,
+  SUM(t.amount) AS total_global_volume_usd,
+  AVG(t.amount) AS global_avg_transaction_amount,
   
   -- Top performers
   (SELECT cardholder_country FROM payments_lakehouse.silver.payments_enriched_stream 
@@ -363,24 +363,24 @@ SELECT
    )) AS top_country_volume_usd,
   
   -- Cross-border metrics
-  SUM(CASE WHEN is_cross_border THEN 1 ELSE 0 END) AS total_cross_border_transactions,
-  SUM(CASE WHEN is_cross_border THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_cross_border,
-  SUM(CASE WHEN is_cross_border THEN amount ELSE 0 END) AS cross_border_volume_usd,
+  SUM(CASE WHEN t.is_cross_border THEN 1 ELSE 0 END) AS total_cross_border_transactions,
+  SUM(CASE WHEN t.is_cross_border THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_cross_border,
+  SUM(CASE WHEN t.is_cross_border THEN t.amount ELSE 0 END) AS cross_border_volume_usd,
   
   -- Growth metrics
-  COUNT(CASE WHEN timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN 1 END) AS transactions_last_7_days,
-  COUNT(CASE WHEN timestamp >= current_timestamp() - INTERVAL 14 DAYS 
-         AND timestamp < current_timestamp() - INTERVAL 7 DAYS THEN 1 END) AS transactions_previous_7_days,
-  ROUND((COUNT(CASE WHEN timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN 1 END) -
-         COUNT(CASE WHEN timestamp >= current_timestamp() - INTERVAL 14 DAYS 
-         AND timestamp < current_timestamp() - INTERVAL 7 DAYS THEN 1 END)) /
-         NULLIF(COUNT(CASE WHEN timestamp >= current_timestamp() - INTERVAL 14 DAYS 
-         AND timestamp < current_timestamp() - INTERVAL 7 DAYS THEN 1 END), 0) * 100, 2) AS wow_growth_pct,
+  COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN 1 END) AS transactions_last_7_days,
+  COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 14 DAYS 
+         AND t.timestamp < current_timestamp() - INTERVAL 7 DAYS THEN 1 END) AS transactions_previous_7_days,
+  ROUND((COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 7 DAYS THEN 1 END) -
+         COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 14 DAYS 
+         AND t.timestamp < current_timestamp() - INTERVAL 7 DAYS THEN 1 END)) /
+         NULLIF(COUNT(CASE WHEN t.timestamp >= current_timestamp() - INTERVAL 14 DAYS 
+         AND t.timestamp < current_timestamp() - INTERVAL 7 DAYS THEN 1 END), 0) * 100, 2) AS wow_growth_pct,
   
   -- Timestamp
-  MAX(timestamp) AS last_updated
-FROM payments_lakehouse.silver.payments_enriched_stream
-WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS;
+  MAX(t.timestamp) AS last_updated
+FROM payments_lakehouse.silver.payments_enriched_stream t
+WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS;
 
 -- Visualization Type: KPI Cards
 -- Display each metric as a separate counter/card

@@ -286,34 +286,34 @@ SELECT * FROM payments_lakehouse.gold.dashboard_external_risk_impact;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_risk_kpis AS
 SELECT 
   -- Overall risk metrics
-  AVG(composite_risk_score) AS overall_avg_risk_score,
-  PERCENTILE(composite_risk_score, 0.50) AS median_risk_score,
-  PERCENTILE(composite_risk_score, 0.90) AS p90_risk_score,
-  PERCENTILE(composite_risk_score, 0.95) AS p95_risk_score,
-  PERCENTILE(composite_risk_score, 0.99) AS p99_risk_score,
+  AVG(t.composite_risk_score) AS overall_avg_risk_score,
+  PERCENTILE(t.composite_risk_score, 0.50) AS median_risk_score,
+  PERCENTILE(t.composite_risk_score, 0.90) AS p90_risk_score,
+  PERCENTILE(t.composite_risk_score, 0.95) AS p95_risk_score,
+  PERCENTILE(t.composite_risk_score, 0.99) AS p99_risk_score,
   
   -- Risk distribution
-  SUM(CASE WHEN composite_risk_score < 0.3 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_low_risk,
-  SUM(CASE WHEN composite_risk_score BETWEEN 0.3 AND 0.6 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_medium_risk,
-  SUM(CASE WHEN composite_risk_score BETWEEN 0.6 AND 0.85 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_high_risk,
-  SUM(CASE WHEN composite_risk_score > 0.85 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_critical_risk,
+  SUM(CASE WHEN t.composite_risk_score < 0.3 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_low_risk,
+  SUM(CASE WHEN t.composite_risk_score BETWEEN 0.3 AND 0.6 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_medium_risk,
+  SUM(CASE WHEN t.composite_risk_score BETWEEN 0.6 AND 0.85 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_high_risk,
+  SUM(CASE WHEN t.composite_risk_score > 0.85 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pct_critical_risk,
   
   -- High-risk transactions
-  SUM(CASE WHEN composite_risk_score > 0.75 THEN 1 ELSE 0 END) AS high_risk_transaction_count,
-  SUM(CASE WHEN composite_risk_score > 0.75 THEN amount ELSE 0 END) AS high_risk_volume_usd,
+  SUM(CASE WHEN t.composite_risk_score > 0.75 THEN 1 ELSE 0 END) AS high_risk_transaction_count,
+  SUM(CASE WHEN t.composite_risk_score > 0.75 THEN t.amount ELSE 0 END) AS high_risk_volume_usd,
   
   -- Fraud indicators
-  SUM(CASE WHEN reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) AS security_violations,
-  SUM(CASE WHEN reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS fraud_attempt_rate,
+  SUM(CASE WHEN t.reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) AS security_violations,
+  SUM(CASE WHEN t.reason_code = '63_SECURITY_VIOLATION' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS fraud_attempt_rate,
   
   -- Total counts
   COUNT(*) AS total_transactions,
-  COUNT(DISTINCT merchant_id) AS unique_merchants,
+  COUNT(DISTINCT t.merchant_id) AS unique_merchants,
   
   -- Timestamp
-  MAX(timestamp) AS last_updated
-FROM payments_lakehouse.silver.payments_enriched_stream
-WHERE timestamp >= current_timestamp() - INTERVAL 7 DAYS;
+  MAX(t.timestamp) AS last_updated
+FROM payments_lakehouse.silver.payments_enriched_stream t
+WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS;
 
 -- Visualization Type: Counter/KPI Cards
 -- Display each metric as a separate KPI card

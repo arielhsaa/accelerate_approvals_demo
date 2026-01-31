@@ -23,33 +23,33 @@ WITH baseline_metrics AS (
   -- Baseline: No smart routing, basic processing
   SELECT 
     COUNT(*) AS total_transactions_baseline,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) AS approved_baseline,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate_baseline,
-    SUM(CASE WHEN is_approved THEN amount ELSE 0 END) AS approved_volume_baseline,
-    SUM(amount) AS total_volume_baseline
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-    AND (recommended_solution_name = 'Antifraud' OR recommended_solution_name = 'DataShareOnly')  -- Basic solutions only
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) AS approved_baseline,
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate_baseline,
+    SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) AS approved_volume_baseline,
+    SUM(t.amount) AS total_volume_baseline
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    AND (t.recommended_solution_name = 'Antifraud' OR t.recommended_solution_name = 'DataShareOnly')  -- Basic solutions only
 ),
 optimized_metrics AS (
   -- Optimized: Smart Checkout with advanced solution combinations
   SELECT 
     COUNT(*) AS total_transactions_optimized,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) AS approved_optimized,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate_optimized,
-    SUM(CASE WHEN is_approved THEN amount ELSE 0 END) AS approved_volume_optimized,
-    SUM(amount) AS total_volume_optimized
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-    AND recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly')  -- Advanced smart routing
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) AS approved_optimized,
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate_optimized,
+    SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) AS approved_volume_optimized,
+    SUM(t.amount) AS total_volume_optimized
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    AND t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly')  -- Advanced smart routing
 ),
 all_transactions AS (
   SELECT 
     COUNT(*) AS total_transactions_all,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate_all,
-    SUM(CASE WHEN is_approved THEN amount ELSE 0 END) AS approved_volume_all
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate_all,
+    SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) AS approved_volume_all
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
 )
 SELECT 
   -- Baseline metrics
@@ -99,29 +99,29 @@ SELECT * FROM payments_lakehouse.gold.dashboard_approval_rate_comparison;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_uplift_by_segment AS
 WITH segmented_performance AS (
   SELECT 
-    cardholder_country AS geography,
-    channel,
-    merchant_cluster AS merchant_category,
+    t.cardholder_country AS geography,
+    t.channel,
+    t.merchant_cluster AS merchant_category,
     CASE 
-      WHEN amount < 50 THEN '0-50'
-      WHEN amount < 500 THEN '50-500'
-      WHEN amount < 2500 THEN '500-2500'
+      WHEN t.amount < 50 THEN '0-50'
+      WHEN t.amount < 500 THEN '50-500'
+      WHEN t.amount < 2500 THEN '500-2500'
       ELSE '2500+'
     END AS amount_range,
-    recommended_solution_name AS solution_stack,
+    t.recommended_solution_name AS solution_stack,
     CASE 
-      WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 'Baseline'
+      WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 'Baseline'
       ELSE 'Optimized'
     END AS optimization_type,
     COUNT(*) AS transaction_count,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) AS approved_count,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
-    SUM(CASE WHEN is_approved THEN amount ELSE 0 END) AS approved_volume,
-    AVG(composite_risk_score) AS avg_risk_score,
-    AVG(expected_approval_prob) AS avg_predicted_approval_probability
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-  GROUP BY cardholder_country, channel, merchant_cluster, amount_range, recommended_solution_name, optimization_type
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) AS approved_count,
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
+    SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) AS approved_volume,
+    AVG(t.composite_risk_score) AS avg_risk_score,
+    AVG(t.expected_approval_prob) AS avg_predicted_approval_probability
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+  GROUP BY t.cardholder_country, t.channel, t.merchant_cluster, amount_range, t.recommended_solution_name, optimization_type
 )
 SELECT 
   s1.geography,
@@ -174,38 +174,38 @@ SELECT * FROM payments_lakehouse.gold.dashboard_uplift_by_segment;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_solution_performance AS
 SELECT 
-  recommended_solution_name AS solution_stack,
+  t.recommended_solution_name AS solution_stack,
   CASE 
-    WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 'Baseline'
-    WHEN recommended_solution_name LIKE '%3DS%' AND recommended_solution_name LIKE '%NetworkToken%' THEN 'Advanced Combo'
-    WHEN recommended_solution_name LIKE '%3DS%' THEN 'Enhanced Security'
-    WHEN recommended_solution_name LIKE '%NetworkToken%' THEN 'Token Optimized'
+    WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 'Baseline'
+    WHEN t.recommended_solution_name LIKE '%3DS%' AND t.recommended_solution_name LIKE '%NetworkToken%' THEN 'Advanced Combo'
+    WHEN t.recommended_solution_name LIKE '%3DS%' THEN 'Enhanced Security'
+    WHEN t.recommended_solution_name LIKE '%NetworkToken%' THEN 'Token Optimized'
     ELSE 'Other Optimized'
   END AS solution_category,
   -- Transaction metrics
   COUNT(*) AS total_transactions,
-  SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) AS approved_transactions,
-  SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) AS approved_transactions,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
   -- Volume metrics
-  SUM(amount) AS total_volume_usd,
-  SUM(CASE WHEN is_approved THEN amount ELSE 0 END) AS approved_volume_usd,
-  AVG(amount) AS avg_transaction_amount,
+  SUM(t.amount) AS total_volume_usd,
+  SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) AS approved_volume_usd,
+  AVG(t.amount) AS avg_transaction_amount,
   -- Risk metrics
-  AVG(composite_risk_score) AS avg_risk_score,
-  SUM(CASE WHEN composite_risk_score > 0.75 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS pct_high_risk,
+  AVG(t.composite_risk_score) AS avg_risk_score,
+  SUM(CASE WHEN t.composite_risk_score > 0.75 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS pct_high_risk,
   -- Cost metrics (from solution_cost column)
-  AVG(solution_cost) AS cost_per_transaction_usd,
+  AVG(t.solution_cost) AS cost_per_transaction_usd,
   -- ROI calculation
-  (SUM(CASE WHEN is_approved THEN amount ELSE 0 END) - 
-   SUM(solution_cost)) AS net_revenue_usd,
+  (SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) - 
+   SUM(t.solution_cost)) AS net_revenue_usd,
   -- Decline analysis
-  SUM(CASE WHEN NOT is_approved THEN 1 ELSE 0 END) AS decline_count,
-  SUM(CASE WHEN NOT is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS decline_rate,
+  SUM(CASE WHEN NOT t.is_approved THEN 1 ELSE 0 END) AS decline_count,
+  SUM(CASE WHEN NOT t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS decline_rate,
   -- Most common decline reasons
-  MAX(CASE WHEN NOT is_approved THEN reason_code END) AS top_decline_reason
-FROM payments_lakehouse.silver.payments_enriched_stream
-WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-GROUP BY recommended_solution_name, solution_category
+  MAX(CASE WHEN NOT t.is_approved THEN t.reason_code END) AS top_decline_reason
+FROM payments_lakehouse.silver.payments_enriched_stream t
+WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+GROUP BY t.recommended_solution_name, solution_category
 HAVING COUNT(*) >= 20
 ORDER BY approval_rate DESC, total_transactions DESC;
 
@@ -227,30 +227,30 @@ SELECT * FROM payments_lakehouse.gold.dashboard_solution_performance;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_approval_trend_comparison AS
 SELECT 
-  DATE_TRUNC('hour', timestamp) AS time_bucket,
+  DATE_TRUNC('hour', t.timestamp) AS time_bucket,
   -- Baseline transactions
-  COUNT(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS baseline_transaction_count,
-  SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND is_approved THEN 1 ELSE 0 END) * 100.0 / 
-    NULLIF(COUNT(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0) AS baseline_approval_rate,
+  COUNT(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS baseline_transaction_count,
+  SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN 1 ELSE 0 END) * 100.0 / 
+    NULLIF(COUNT(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0) AS baseline_approval_rate,
   -- Optimized transactions
-  COUNT(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS optimized_transaction_count,
-  SUM(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND is_approved THEN 1 ELSE 0 END) * 100.0 / 
-    NULLIF(COUNT(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0) AS optimized_approval_rate,
+  COUNT(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS optimized_transaction_count,
+  SUM(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN 1 ELSE 0 END) * 100.0 / 
+    NULLIF(COUNT(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0) AS optimized_approval_rate,
   -- Overall
   COUNT(*) AS total_transaction_count,
-  SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS overall_approval_rate,
+  SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS overall_approval_rate,
   -- Volume
-  SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND is_approved THEN amount ELSE 0 END) AS baseline_approved_volume,
-  SUM(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND is_approved THEN amount ELSE 0 END) AS optimized_approved_volume,
+  SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN t.amount ELSE 0 END) AS baseline_approved_volume,
+  SUM(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN t.amount ELSE 0 END) AS optimized_approved_volume,
   -- Moving averages (3-hour window)
-  AVG(SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND is_approved THEN 1 ELSE 0 END) * 100.0 / 
-    NULLIF(COUNT(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0)) 
-    OVER (ORDER BY DATE_TRUNC('hour', timestamp) ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS baseline_approval_rate_ma3,
-  AVG(SUM(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND is_approved THEN 1 ELSE 0 END) * 100.0 / 
-    NULLIF(COUNT(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0))
-    OVER (ORDER BY DATE_TRUNC('hour', timestamp) ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS optimized_approval_rate_ma3
-FROM payments_lakehouse.silver.payments_enriched_stream
-WHERE timestamp >= current_timestamp() - INTERVAL 7 DAYS
+  AVG(SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN 1 ELSE 0 END) * 100.0 / 
+    NULLIF(COUNT(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0)) 
+    OVER (ORDER BY DATE_TRUNC('hour', t.timestamp) ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS baseline_approval_rate_ma3,
+  AVG(SUM(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN 1 ELSE 0 END) * 100.0 / 
+    NULLIF(COUNT(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0))
+    OVER (ORDER BY DATE_TRUNC('hour', t.timestamp) ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS optimized_approval_rate_ma3
+FROM payments_lakehouse.silver.payments_enriched_stream t
+WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
 GROUP BY time_bucket
 ORDER BY time_bucket DESC;
 
@@ -274,17 +274,17 @@ SELECT * FROM payments_lakehouse.gold.dashboard_approval_trend_comparison;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_revenue_impact AS
 WITH daily_metrics AS (
   SELECT 
-    DATE_TRUNC('day', timestamp) AS date,
+    DATE_TRUNC('day', t.timestamp) AS date,
     -- Baseline metrics
-    SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND is_approved THEN amount ELSE 0 END) AS baseline_approved_volume,
-    COUNT(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS baseline_transaction_count,
+    SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN t.amount ELSE 0 END) AS baseline_approved_volume,
+    COUNT(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS baseline_transaction_count,
     -- Optimized metrics
-    SUM(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND is_approved THEN amount ELSE 0 END) AS optimized_approved_volume,
-    COUNT(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS optimized_transaction_count,
+    SUM(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN t.amount ELSE 0 END) AS optimized_approved_volume,
+    COUNT(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS optimized_transaction_count,
     -- Processing costs (from solution_cost column)
-    SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN solution_cost ELSE solution_cost END) AS processing_costs
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN t.solution_cost ELSE t.solution_cost END) AS processing_costs
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
   GROUP BY date
 )
 SELECT 
@@ -331,25 +331,25 @@ SELECT * FROM payments_lakehouse.gold.dashboard_revenue_impact;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_geo_approval_uplift AS
 SELECT 
-  cardholder_country AS geography,
+  t.cardholder_country AS geography,
   -- Baseline metrics
-  COUNT(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS baseline_transactions,
-  SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND is_approved THEN 1 ELSE 0 END) * 100.0 / 
-    NULLIF(COUNT(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0) AS baseline_approval_rate,
-  SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND is_approved THEN amount ELSE 0 END) AS baseline_approved_volume,
+  COUNT(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS baseline_transactions,
+  SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN 1 ELSE 0 END) * 100.0 / 
+    NULLIF(COUNT(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0) AS baseline_approval_rate,
+  SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN t.amount ELSE 0 END) AS baseline_approved_volume,
   -- Optimized metrics
-  COUNT(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS optimized_transactions,
-  SUM(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND is_approved THEN 1 ELSE 0 END) * 100.0 / 
-    NULLIF(COUNT(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0) AS optimized_approval_rate,
-  SUM(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND is_approved THEN amount ELSE 0 END) AS optimized_approved_volume,
+  COUNT(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END) AS optimized_transactions,
+  SUM(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN 1 ELSE 0 END) * 100.0 / 
+    NULLIF(COUNT(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0) AS optimized_approval_rate,
+  SUM(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN t.amount ELSE 0 END) AS optimized_approved_volume,
   -- Uplift calculations
-  (SUM(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND is_approved THEN 1 ELSE 0 END) * 100.0 / 
-    NULLIF(COUNT(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0)) -
-  (SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND is_approved THEN 1 ELSE 0 END) * 100.0 / 
-    NULLIF(COUNT(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0)) AS approval_rate_uplift_pct,
+  (SUM(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN 1 ELSE 0 END) * 100.0 / 
+    NULLIF(COUNT(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0)) -
+  (SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN 1 ELSE 0 END) * 100.0 / 
+    NULLIF(COUNT(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 1 END), 0)) AS approval_rate_uplift_pct,
   -- Revenue impact
-  SUM(CASE WHEN recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND is_approved THEN amount ELSE 0 END) -
-  SUM(CASE WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND is_approved THEN amount ELSE 0 END) AS revenue_uplift_usd,
+  SUM(CASE WHEN t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN t.amount ELSE 0 END) -
+  SUM(CASE WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') AND t.is_approved THEN t.amount ELSE 0 END) AS revenue_uplift_usd,
   -- Most effective solution for this geography
   (SELECT recommended_solution_name 
    FROM payments_lakehouse.silver.payments_enriched_stream sub
@@ -360,8 +360,8 @@ SELECT
    ORDER BY COUNT(*) DESC
    LIMIT 1) AS best_performing_solution
 FROM payments_lakehouse.silver.payments_enriched_stream main
-WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-GROUP BY cardholder_country
+WHERE main.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+GROUP BY t.cardholder_country
 HAVING baseline_transactions >= 20 AND optimized_transactions >= 20
 ORDER BY approval_rate_uplift_pct DESC;
 
@@ -383,19 +383,19 @@ SELECT * FROM payments_lakehouse.gold.dashboard_geo_approval_uplift;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_cascading_impact AS
 WITH initial_attempts AS (
   SELECT 
-    transaction_id,
-    merchant_id,
-    cardholder_id,
-    amount,
-    cardholder_country AS geography,
-    recommended_solution_name AS solution_stack,
-    is_approved,
-    reason_code,
-    timestamp,
-    retry_attempt_number,
-    ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY timestamp) AS attempt_number
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    t.transaction_id,
+    t.merchant_id,
+    t.cardholder_id,
+    t.amount,
+    t.cardholder_country AS geography,
+    t.recommended_solution_name AS solution_stack,
+    t.is_approved,
+    t.reason_code,
+    t.timestamp,
+    t.retry_attempt_number,
+    ROW_NUMBER() OVER (PARTITION BY t.transaction_id ORDER BY t.timestamp) AS attempt_number
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
 ),
 cascaded_attempts AS (
   SELECT 
@@ -455,21 +455,21 @@ CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_ab_test_results AS
 WITH test_groups AS (
   SELECT 
     CASE 
-      WHEN recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 'Control Group (Baseline)'
+      WHEN t.recommended_solution_name IN ('Antifraud', 'DataShareOnly') THEN 'Control Group (Baseline)'
       ELSE 'Treatment Group (Optimized)'
     END AS test_group,
     COUNT(*) AS sample_size,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) AS successes,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS success_rate,
-    SUM(CASE WHEN is_approved THEN amount ELSE 0 END) AS total_approved_volume,
-    AVG(amount) AS avg_transaction_amount,
-    AVG(composite_risk_score) AS avg_risk_score,
-    SUM(CASE WHEN NOT is_approved THEN 1 ELSE 0 END) AS failures,
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) AS successes,
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS success_rate,
+    SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) AS total_approved_volume,
+    AVG(t.amount) AS avg_transaction_amount,
+    AVG(t.composite_risk_score) AS avg_risk_score,
+    SUM(CASE WHEN NOT t.is_approved THEN 1 ELSE 0 END) AS failures,
     -- Processing costs (from solution_cost)
-    SUM(solution_cost) AS total_processing_cost,
-    AVG(solution_cost) AS avg_processing_cost
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    SUM(t.solution_cost) AS total_processing_cost,
+    AVG(t.solution_cost) AS avg_processing_cost
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
   GROUP BY test_group
 )
 SELECT 
@@ -546,20 +546,20 @@ CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_optimization_kpis AS
 WITH baseline AS (
   SELECT 
     COUNT(*) AS txn_count,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
-    SUM(CASE WHEN is_approved THEN amount ELSE 0 END) AS approved_volume
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-    AND recommended_solution_name IN ('Antifraud', 'DataShareOnly')
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
+    SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) AS approved_volume
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    AND t.recommended_solution_name IN ('Antifraud', 'DataShareOnly')
 ),
 optimized AS (
   SELECT 
     COUNT(*) AS txn_count,
-    SUM(CASE WHEN is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
-    SUM(CASE WHEN is_approved THEN amount ELSE 0 END) AS approved_volume
-  FROM payments_lakehouse.silver.payments_enriched_stream
-  WHERE timestamp >= current_timestamp() - INTERVAL 30 DAYS
-    AND recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly')
+    SUM(CASE WHEN t.is_approved THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS approval_rate,
+    SUM(CASE WHEN t.is_approved THEN t.amount ELSE 0 END) AS approved_volume
+  FROM payments_lakehouse.silver.payments_enriched_stream t
+  WHERE t.timestamp >= current_timestamp() - INTERVAL 30 DAYS
+    AND t.recommended_solution_name NOT IN ('Antifraud', 'DataShareOnly')
 )
 SELECT 
   -- Approval rate metrics
