@@ -18,7 +18,6 @@ command:
   - '--server.enableXsrfProtection=false'
   - '--browser.gatherUsageStats=false'
 
-
 env:
   # Streamlit Configuration
   - name: 'STREAMLIT_GATHER_USAGE_STATS'
