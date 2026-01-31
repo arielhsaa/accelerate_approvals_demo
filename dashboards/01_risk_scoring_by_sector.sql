@@ -130,9 +130,9 @@ SELECT * FROM payments_lakehouse.gold.dashboard_sector_risk_hourly;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_high_risk_industries AS
 SELECT 
-  m.merchant_sector,
-  m.merchant_category,
-  m.mcc_code,
+  m.mcc_description AS merchant_sector,
+  m.merchant_cluster AS merchant_category,
+  m.mcc AS mcc_code,
   COUNT(DISTINCT t.transaction_id) AS total_transactions,
   COUNT(DISTINCT t.merchant_id) AS merchant_count,
   AVG(t.composite_risk_score) AS avg_risk_score,
@@ -152,7 +152,7 @@ FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
   AND t.composite_risk_score > 0.60  -- Focus on medium-high to critical risk
-GROUP BY m.merchant_sector, m.merchant_category, m.mcc_code
+GROUP BY m.mcc_description, m.merchant_cluster, m.mcc
 HAVING COUNT(*) >= 50  -- Minimum volume for statistical significance
 ORDER BY avg_risk_score DESC, critical_risk_count DESC
 LIMIT 50;
@@ -176,7 +176,7 @@ SELECT * FROM payments_lakehouse.gold.dashboard_high_risk_industries;
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_risk_trend AS
 SELECT 
   DATE_TRUNC('day', t.timestamp) AS date,
-  m.merchant_sector,
+  m.mcc_description AS merchant_sector,
   AVG(t.composite_risk_score) AS avg_risk_score,
   AVG(t.cardholder_risk_score) AS avg_cardholder_risk,
   AVG(t.merchant_risk_score) AS avg_merchant_risk,
@@ -187,8 +187,8 @@ SELECT
 FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
-GROUP BY date, m.merchant_sector
-ORDER BY date, m.merchant_sector;
+GROUP BY date, m.mcc_description
+ORDER BY date, m.mcc_description;
 
 -- Visualization Type: Line Chart
 -- X-axis: date
@@ -207,7 +207,7 @@ SELECT * FROM payments_lakehouse.gold.dashboard_risk_trend;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_risk_mitigation AS
 SELECT 
-  m.merchant_sector,
+  m.mcc_description AS merchant_sector,
   t.recommended_solution_name AS solution_stack,
   -- Overall metrics
   COUNT(*) AS total_transactions,
@@ -225,9 +225,9 @@ FROM payments_lakehouse.silver.payments_enriched_stream t
 JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
   AND t.composite_risk_score > 0.50  -- Focus on higher risk transactions
-GROUP BY m.merchant_sector, t.recommended_solution_name
+GROUP BY m.mcc_description, t.recommended_solution_name
 HAVING COUNT(*) >= 20
-ORDER BY m.merchant_sector, avg_risk_score_before_mitigation DESC;
+ORDER BY m.mcc_description, avg_risk_score_before_mitigation DESC;
 
 -- Visualization Type: Grouped Bar Chart
 -- X-axis: merchant_sector
@@ -246,7 +246,7 @@ SELECT * FROM payments_lakehouse.gold.dashboard_risk_mitigation;
 
 CREATE OR REPLACE VIEW payments_lakehouse.gold.dashboard_external_risk_impact AS
 SELECT 
-  m.merchant_sector,
+  m.mcc_description AS merchant_sector,
   t.cardholder_country AS geography,
   -- External risk factors (from joined table)
   AVG(t.sector_risk_score) AS avg_sector_risk,
@@ -264,7 +264,7 @@ JOIN payments_lakehouse.bronze.merchants_dim m ON t.merchant_id = m.merchant_id
 WHERE t.timestamp >= current_timestamp() - INTERVAL 7 DAYS
   AND t.country_risk_score IS NOT NULL
   AND t.sector_risk_score IS NOT NULL
-GROUP BY m.merchant_sector, t.cardholder_country
+GROUP BY m.mcc_description, t.cardholder_country
 ORDER BY avg_combined_risk_score DESC;
 
 -- Visualization Type: Scatter Plot
