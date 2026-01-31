@@ -1,0 +1,224 @@
+{
+  "name": "payment-authorization-demo",
+  "version": "1.0.0",
+  "description": "Azure Databricks Payment Authorization Optimization Demo - Smart Checkout, Reason Code Analytics, Smart Retry",
+  "author": "Databricks Solutions",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arielhsaa/accelerate_approvals_demo.git"
+  },
+  "keywords": [
+    "databricks",
+    "payments",
+    "authorization",
+    "lakehouse",
+    "pyspark",
+    "delta-lake",
+    "mlflow",
+    "streamlit",
+    "analytics"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "databricks": {
+    "runtime": "14.3.x-scala2.12",
+    "cluster": {
+      "spark_version": "14.3.x-scala2.12",
+      "node_type_id": "Standard_DS3_v2",
+      "num_workers": 2,
+      "autoscale": {
+        "min_workers": 2,
+        "max_workers": 8
+      }
+    },
+    "libraries": [
+      {
+        "pypi": {
+          "package": "streamlit==1.29.0"
+        }
+      },
+      {
+        "pypi": {
+          "package": "plotly==5.18.0"
+        }
+      },
+      {
+        "pypi": {
+          "package": "streamlit-extras==0.3.6"
+        }
+      },
+      {
+        "pypi": {
+          "package": "streamlit-option-menu==0.3.6"
+        }
+      },
+      {
+        "pypi": {
+          "package": "databricks-sql-connector==3.0.2"
+        }
+      }
+    ]
+  },
+  "notebooks": {
+    "00_deployment_setup": {
+      "path": "notebooks/00_deployment_setup.py",
+      "description": "Automated environment setup and configuration",
+      "runtime": "5-10 minutes"
+    },
+    "01_ingest_synthetic_data": {
+      "path": "notebooks/01_ingest_synthetic_data.py",
+      "description": "Generate synthetic streaming transaction data",
+      "runtime": "3-5 minutes"
+    },
+    "02_stream_enrichment_smart_checkout": {
+      "path": "notebooks/02_stream_enrichment_smart_checkout.py",
+      "description": "Real-time enrichment and Smart Checkout decisioning",
+      "runtime": "Continuous streaming"
+    },
+    "03_reason_code_performance": {
+      "path": "notebooks/03_reason_code_performance.py",
+      "description": "Decline reason code analytics and insights",
+      "runtime": "2-3 minutes"
+    },
+    "04_smart_retry": {
+      "path": "notebooks/04_smart_retry.py",
+      "description": "ML-powered retry optimization with MLflow",
+      "runtime": "4-6 minutes"
+    },
+    "05_dashboards_and_genie_examples": {
+      "path": "notebooks/05_dashboards_and_genie_examples.sql",
+      "description": "SQL views for dashboards and Genie integration",
+      "runtime": "1-2 minutes"
+    },
+    "06_app_demo_ui": {
+      "path": "notebooks/06_app_demo_ui.py",
+      "description": "Basic Streamlit app for live monitoring",
+      "runtime": "Continuous (Databricks App)"
+    },
+    "07_advanced_app_ui": {
+      "path": "notebooks/07_advanced_app_ui.py",
+      "description": "Advanced multi-page Streamlit app with Genie",
+      "runtime": "Continuous (Databricks App)"
+    }
+  },
+  "dashboards": {
+    "risk_scoring": {
+      "path": "dashboards/01_risk_scoring_by_sector.sql",
+      "queries": 8,
+      "description": "Risk analysis by merchant sector and industry"
+    },
+    "transactions_by_country": {
+      "path": "dashboards/02_transactions_by_country.sql",
+      "queries": 9,
+      "description": "Global transaction volume and geographic analysis"
+    },
+    "approval_rates_comparison": {
+      "path": "dashboards/03_standard_vs_optimized_approval_rates.sql",
+      "queries": 9,
+      "description": "Baseline vs optimized approval rate comparison and ROI"
+    }
+  },
+  "configuration": {
+    "catalog": "payments_lakehouse",
+    "schemas": {
+      "bronze": "Raw ingestion layer",
+      "silver": "Cleansed and enriched data",
+      "gold": "Analytics-ready aggregations"
+    },
+    "config_files": [
+      "resources/config/policies.json",
+      "resources/config/routing_policies.json",
+      "resources/config/retry_policies.json",
+      "resources/config/reason_codes.json"
+    ]
+  },
+  "features": {
+    "smart_checkout": {
+      "enabled": true,
+      "description": "Dynamic payment solution optimization",
+      "capabilities": [
+        "Multi-solution combination selection",
+        "Risk-aware routing",
+        "Cascading fallback paths",
+        "Geographic compliance (3DS, SCA)"
+      ]
+    },
+    "reason_code_analytics": {
+      "enabled": true,
+      "description": "Real-time decline pattern analysis",
+      "capabilities": [
+        "Standardized reason code taxonomy",
+        "Actionable insights generation",
+        "Heatmap visualizations",
+        "Configuration recommendations"
+      ]
+    },
+    "smart_retry": {
+      "enabled": true,
+      "description": "ML-powered retry optimization",
+      "capabilities": [
+        "Gradient Boosted Trees model",
+        "Success probability prediction",
+        "Optimal timing recommendations",
+        "MLflow tracking and versioning"
+      ]
+    },
+    "genie_integration": {
+      "enabled": true,
+      "description": "Natural language query interface",
+      "capabilities": [
+        "Business and technical queries",
+        "Context-aware responses",
+        "Automated insights",
+        "Dashboard integration"
+      ]
+    }
+  },
+  "deployment": {
+    "prerequisites": [
+      "Azure Databricks Premium/Enterprise tier",
+      "Unity Catalog enabled",
+      "DBR 13.3 LTS or 14.3 LTS",
+      "Sufficient compute resources"
+    ],
+    "estimated_setup_time": "45-60 minutes",
+    "estimated_demo_time": "30-45 minutes"
+  },
+  "documentation": {
+    "readme": "README.md",
+    "quickstart": "QUICKSTART.md",
+    "deployment": "DEPLOYMENT.md",
+    "architecture": "ARCHITECTURE.md",
+    "demo_script": "DEMO_SCRIPT.md",
+    "presentation": "PRESENTATION.md"
+  },
+  "monitoring": {
+    "kpis": {
+      "approval_rate_target": 0.85,
+      "approval_rate_uplift_target": 0.02,
+      "fraud_rate_target": 0.01,
+      "processing_latency_target_ms": 1500
+    },
+    "alerts": {
+      "approval_rate_warning": 0.80,
+      "approval_rate_critical": 0.75,
+      "fraud_rate_warning": 0.02,
+      "fraud_rate_critical": 0.05
+    }
+  },
+  "scripts": {
+    "setup": "Run notebook 00_deployment_setup.py",
+    "ingest": "Run notebook 01_ingest_synthetic_data.py",
+    "stream": "Run notebook 02_stream_enrichment_smart_checkout.py",
+    "analyze": "Run notebooks 03-05 in sequence",
+    "deploy-app": "Deploy notebook 07_advanced_app_ui.py as Databricks App",
+    "create-dashboards": "Execute SQL from dashboards/*.sql files"
+  },
+  "support": {
+    "documentation_url": "https://github.com/arielhsaa/accelerate_approvals_demo",
+    "issues_url": "https://github.com/arielhsaa/accelerate_approvals_demo/issues"
+  }
+}
