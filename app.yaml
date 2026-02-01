@@ -7,16 +7,17 @@
 # Purpose: Enterprise-grade app with advanced geo-analytics and premium UI/UX
 # ============================================================================
 
-command: 
-  - 'streamlit'
-  - 'run'
-  - 'app.py'
-  - '--server.port=8501'
-  - '--server.address=0.0.0.0'
-  - '--server.headless=true'
-  - '--server.enableCORS=false'
-  - '--server.enableXsrfProtection=false'
-  - '--browser.gatherUsageStats=false'
+command:
+  - streamlit
+  - run
+  - app.py
+  - --server.port=8501
+  - --server.address=0.0.0.0
+  - --server.headless=true
+  - --server.enableCORS=false
+  - --server.enableXsrfProtection=false
+  - --browser.gatherUsageStats=false
+  - --server.fileWatcherType=none
 
 env:
   # Streamlit Configuration
@@ -108,19 +109,19 @@ resources:
     memory: "8Gi"       # Initial memory reservation
     cpu: "4"            # Initial CPU cores
 
-# Health Check Configuration
+# Health Check Configuration - Very tolerant for stability
 healthCheck:
   path: "/_stcore/health"
   port: 8501
-  initialDelaySeconds: 120   # Increased to 2 minutes for slower startups
-  periodSeconds: 15          # Check every 15 seconds
-  timeoutSeconds: 10         # Longer timeout for health check
+  initialDelaySeconds: 180   # 3 minutes - give plenty of time for dependencies
+  periodSeconds: 30          # Check every 30 seconds (less aggressive)
+  timeoutSeconds: 15         # 15 second timeout for slow responses
   successThreshold: 1
-  failureThreshold: 5        # More tolerance for failures
+  failureThreshold: 10       # Very tolerant - 10 failures before restart
 
 # Application Metadata
 metadata:
-  name: "pagonxt-getnet-rates"
+  name: "payment-authorization-premium"
   displayName: "Payment Authorization Premium - Enterprise Edition"
   description: |
     Enterprise-grade payment authorization analytics platform with advanced geo-analytics.
