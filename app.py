@@ -52,11 +52,11 @@ def apply_chart_layout(fig, height=400, **kwargs):
 # APP METADATA
 # ============================================================================
 APP_INFO = {
-    'title': 'PagoNxt Getnet - Payment Authorization',
+    'title': 'PagoNxt Getnet - Approval Rates',
     'icon': '💳',
     'version': '3.0.0-premium',
     'author': 'PagoNxt Getnet + Databricks',
-    'description': 'Enterprise Payment Authorization Analytics Platform'
+    'description': 'Enterprise Approval Rates Analytics Platform'
 }
 
 # Navigation menu configuration
@@ -1026,7 +1026,7 @@ def show_premium_header():
             <span class="brand-name">Getnet</span>
         </div>
         <p class="subtitle">
-            Monitor health of your payment authorization business<br/>
+            Monitor health of your Approval Rates business<br/>
             <small style="opacity: 0.8;">Control and analyze your data in the easiest way</small>
         </p>
         <div>
@@ -1052,14 +1052,14 @@ def main():
     
     # Set page config - MUST BE FIRST STREAMLIT COMMAND
     st.set_page_config(
-        page_title="PagoNxt Getnet - Payment Authorization",
+        page_title="PagoNxt Getnet - Approval Rates",
         page_icon="💳",
         layout="wide",
         initial_sidebar_state="expanded",
         menu_items={
             'Get Help': 'https://www.getnet.com',
             'Report a bug': None,
-            'About': "PagoNxt Getnet Payment Authorization Platform - Powered by Databricks"
+            'About': "PagoNxt Getnet Approval Rates Platform - Powered by Databricks"
         }
     )
     
@@ -1121,9 +1121,9 @@ def main():
         st.markdown("""
         <div style="text-align: center; padding: 1rem 0;">
             <div style="background: linear-gradient(135deg, #5B2C91 0%, #00A3E0 100%); padding: 2rem 1.5rem; border-radius: 16px; margin-bottom: 1rem; border: 2px solid #00D9FF;">
-                <h1 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: 1px;">PagoNxt</h1>
-                <p style="color: #00D9FF; margin: 0.3rem 0 0 0; font-size: 1.1rem; font-weight: 600;">Getnet</p>
-                <p style="color: rgba(255,255,255,0.8); margin: 0.5rem 0 0 0; font-size: 0.75rem;">Payment Authorization</p>
+                <h1 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: 1px;">Getnet</h1>
+                <p style="color: #00D9FF; margin: 0.3rem 0 0 0; font-size: 1.1rem; font-weight: 600;">PagoNxt</p>
+                <p style="color: rgba(255,255,255,0.8); margin: 0.5rem 0 0 0; font-size: 0.75rem;">Approval Rates</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1430,7 +1430,7 @@ def show_global_geo_analytics(checkout_data):
     st.markdown("""
     <div style="position: relative; z-index: 1;">
         <h1 class="globe-section-title">Global Statistics</h1>
-        <p class="globe-section-subtitle">Worldwide Payment Authorization Analytics</p>
+        <p class="globe-section-subtitle">Worldwide Approval Rates Analytics</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -2596,7 +2596,7 @@ def show_performance_metrics(checkout_data, decline_data, retry_data):
     st.markdown("""
     <div class="info-box-premium">
         <p><strong>Comprehensive performance analytics</strong> showing trends, comparisons, and detailed metrics 
-        across all payment authorization activities.</p>
+        across all Approval Rates activities.</p>
     </div>
     """, unsafe_allow_html=True)
     
