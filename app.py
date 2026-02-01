@@ -1078,12 +1078,34 @@ def main():
             background: linear-gradient(180deg, #E0F2FE 0%, #BAE6FD 100%) !important;
             border-right: 1px solid #7DD3FC !important;
         }
-        /* Navigation area with subtle background */
+        /* Navigation area with light blue background */
         [data-testid="stSidebar"] [data-testid="stSidebarNav"] {
             background-color: rgba(224, 242, 254, 0.6) !important;
             padding: 1rem;
             border-radius: 12px;
             margin: 0.5rem;
+        }
+        /* Navigation selectbox with light blue styling */
+        [data-testid="stSidebar"] .stSelectbox {
+            background-color: rgba(224, 242, 254, 0.8) !important;
+        }
+        [data-testid="stSidebar"] .stSelectbox > div > div {
+            background-color: #E0F2FE !important;
+            border: 2px solid #7DD3FC !important;
+            border-radius: 8px !important;
+        }
+        [data-testid="stSidebar"] .stSelectbox label {
+            color: #0369A1 !important;
+            font-weight: 600 !important;
+        }
+        /* Navigation menu items */
+        [data-testid="stSidebar"] [data-baseweb="select"] {
+            background-color: #E0F2FE !important;
+            border: 2px solid #7DD3FC !important;
+        }
+        [data-testid="stSidebar"] [data-baseweb="select"]:hover {
+            border-color: #0EA5E9 !important;
+            background-color: #BAE6FD !important;
         }
         [data-testid="stHeader"] {
             background-color: #FFFFFF !important;
