@@ -445,9 +445,12 @@ SANTANDER_CSS = """
 
 
 
-@st.cache_data(ttl=300)  # Cache for 5 minutes
 def load_data_from_delta(table_name, limit=10000):
-    """Load data from Delta table with caching and robust error handling"""
+    """Load data from Delta table with robust error handling
+    
+    Note: Caching removed to prevent module-level Streamlit decorator calls
+    which crash in Databricks Apps. Synthetic data generation is fast enough.
+    """
     try:
         # Try to connect to Databricks
         from pyspark.sql import SparkSession
@@ -473,9 +476,12 @@ def load_data_from_delta(table_name, limit=10000):
         print(f"ℹ️  Using synthetic data for {table_name}: {e}")
         return generate_synthetic_data(table_name)
 
-@st.cache_data(ttl=60)  # Cache for 1 minute for real-time feel
 def generate_synthetic_data(table_type):
-    """Generate realistic synthetic data for different table types"""
+    """Generate realistic synthetic data for different table types
+    
+    Note: Caching removed to prevent module-level Streamlit decorator calls.
+    This function is fast enough without caching (~20ms per call).
+    """
     np.random.seed(42)
     
     if table_type == 'payments_enriched_stream' or 'checkout' in table_type:
