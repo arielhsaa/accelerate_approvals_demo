@@ -1606,86 +1606,112 @@ def main():
 
 
 def show_executive_dashboard(checkout_data, decline_data, retry_data):
-    """Premium executive dashboard with key metrics"""
+    """🎯 CEO EXECUTIVE DASHBOARD - Maximum Business Value & Actionable Insights"""
     
-    st.markdown('<h2 class="section-header-premium">📊 Executive Overview</h2>', unsafe_allow_html=True)
-    
-    # Ensure checkout_data has required columns
+    # Ensure data integrity
     if checkout_data.empty or 'approval_status' not in checkout_data.columns:
-        # Regenerate data if missing critical columns
         checkout_data = generate_synthetic_data('payments_enriched_stream')
     
-    # Calculate KPIs
+    # ========== CEO BRIEFING HEADER ==========
+    st.markdown("""
+    <div class="kpi-card-modern fade-in" style="background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%); color: white; padding: 2rem; margin-bottom: 2rem;">
+        <h1 style="margin: 0; font-size: 2rem; font-weight: 800;">🎯 CEO Executive Dashboard</h1>
+        <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.95;">Real-time approval rates, revenue impact, and AI-powered recommendations</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Calculate comprehensive CEO metrics
     if not checkout_data.empty and 'approval_status' in checkout_data.columns:
         total_transactions = len(checkout_data)
         approved = checkout_data[checkout_data['approval_status'] == 'approved']
+        declined = checkout_data[checkout_data['approval_status'] == 'declined']
+        
         approval_rate = (len(approved) / total_transactions * 100) if total_transactions > 0 else 0
         total_volume = approved['amount'].sum() if 'amount' in approved.columns and not approved.empty else 0
         avg_risk = checkout_data['risk_score'].mean() if 'risk_score' in checkout_data.columns else 0
         
-        # Calculate deltas (simulated)
-        approval_delta = 7.8
+        # CEO-specific calculations
+        lost_revenue = declined['amount'].sum() if 'amount' in declined.columns and not declined.empty else 0
+        recoverable_revenue = lost_revenue * 0.65  # 65% recovery potential
+        monthly_revenue = total_volume * 30  # Extrapolate to monthly
+        approval_improvement = 7.8  # vs baseline
+        revenue_gain_from_improvement = monthly_revenue * (approval_improvement / 100)
+        
+        # Deltas
+        approval_delta = approval_improvement
         volume_delta = 12.5
         risk_delta = -15.3
-        transaction_delta = 8.2
+        
+        # Fraud rate (simulated)
+        fraud_rate = 0.08
+        industry_avg_fraud = 0.12
+        
     else:
-        total_transactions = 0
-        approval_rate = 0
-        total_volume = 0
-        avg_risk = 0
-        approval_delta = 0
-        volume_delta = 0
-        risk_delta = 0
-        transaction_delta = 0
+        total_transactions = approval_rate = total_volume = avg_risk = 0
+        lost_revenue = recoverable_revenue = monthly_revenue = revenue_gain_from_improvement = 0
+        approval_delta = volume_delta = risk_delta = 0
+        fraud_rate = industry_avg_fraud = 0
     
-    # Premium KPI Cards
+    # ========== PRIMARY CEO KPIS (4 Cards) ==========
+    st.markdown('<div class="section-header-modern">💼 Business Performance Snapshot</div>', unsafe_allow_html=True)
+    
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown(f"""
-        <div class="kpi-card-premium">
-            <div class="kpi-icon">✅</div>
-            <div class="kpi-label-premium">Approval Rate</div>
-            <div class="kpi-value-premium">{approval_rate:.1f}%</div>
-            <div class="kpi-delta-positive">
-                ↑ +{approval_delta}% vs baseline
+        <div class="kpi-card-modern">
+            <div class="kpi-label">APPROVAL RATE</div>
+            <div class="kpi-value">{approval_rate:.1f}%</div>
+            <div class="kpi-delta-positive">↑ +{approval_delta}% vs baseline</div>
+            <div class="modern-progress" style="margin-top: 1rem;">
+                <div class="modern-progress-bar" style="width: {approval_rate}%"></div>
             </div>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--neutral-600);">
+                Target: 95% | Industry: 92%
+            </p>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown(f"""
-        <div class="kpi-card-premium">
-            <div class="kpi-icon">💰</div>
-            <div class="kpi-label-premium">Approved Volume</div>
-            <div class="kpi-value-premium">${total_volume/1e6:.2f}M</div>
-            <div class="kpi-delta-positive">
-                ↑ +{volume_delta}% vs last week
-            </div>
+        <div class="kpi-card-modern">
+            <div class="kpi-label">MONTHLY REVENUE</div>
+            <div class="kpi-value">${monthly_revenue/1e6:.1f}M</div>
+            <div class="kpi-delta-positive">↑ +${revenue_gain_from_improvement/1e6:.1f}M from optimization</div>
+            <span class="modern-badge badge-success" style="margin-top: 1rem;">+{volume_delta}% growth</span>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--neutral-600);">
+                YoY: +$25M projected
+            </p>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown(f"""
-        <div class="kpi-card-premium">
-            <div class="kpi-icon">🔒</div>
-            <div class="kpi-label-premium">Avg Risk Score</div>
-            <div class="kpi-value-premium">{avg_risk:.3f}</div>
-            <div class="kpi-delta-positive">
-                ↓ {risk_delta}% (Lower is better)
+        <div class="kpi-card-modern">
+            <div class="kpi-label">RECOVERABLE REVENUE</div>
+            <div class="kpi-value">${recoverable_revenue/1e6:.2f}M</div>
+            <div style="color: var(--warning); font-size: 0.9rem; font-weight: 600; margin-top: 0.5rem;">
+                💰 Opportunity: ${lost_revenue/1e6:.2f}M declined
             </div>
+            <span class="modern-badge badge-warning" style="margin-top: 1rem;">65% recoverable</span>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--neutral-600);">
+                Via Smart Retry + Routing
+            </p>
         </div>
         """, unsafe_allow_html=True)
     
     with col4:
         st.markdown(f"""
-        <div class="kpi-card-premium">
-            <div class="kpi-icon">📈</div>
-            <div class="kpi-label-premium">Total Transactions</div>
-            <div class="kpi-value-premium">{total_transactions:,}</div>
-            <div class="kpi-delta-positive">
-                ↑ +{transaction_delta}% growth
+        <div class="kpi-card-modern">
+            <div class="kpi-label">FRAUD RATE</div>
+            <div class="kpi-value">{fraud_rate:.2f}%</div>
+            <div class="kpi-delta-positive">↓ {abs(risk_delta):.1f}% improvement</div>
+            <div class="modern-progress" style="margin-top: 1rem; background: #FEE2E2;">
+                <div class="modern-progress-bar" style="width: {(fraud_rate/industry_avg_fraud)*100}%; background: linear-gradient(90deg, #10B981 0%, #059669 100%);"></div>
             </div>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--neutral-600);">
+                Industry Avg: {industry_avg_fraud:.2f}%
+            </p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1818,6 +1844,290 @@ def show_executive_dashboard(checkout_data, decline_data, retry_data):
         <div class="info-box-premium">
             <h4>💰 Revenue Opportunity</h4>
             <p><strong>Smart Retry:</strong> 450 transactions with >70% retry success probability = $127K potential recovery</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # ========== AI AGENT RECOMMENDATIONS ==========
+    st.markdown('<div class="section-header-modern">🤖 AI Agent Recommendations</div>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        <div class="modern-card slide-in-left">
+            <h4 style="color: var(--brand-primary); margin: 0 0 1rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>💰</span> Revenue Optimization Agent
+            </h4>
+            <div style="background: linear-gradient(135deg, #F59E0B20 0%, #F59E0B10 100%); border-left: 4px solid #F59E0B; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <p style="margin: 0; font-weight: 600; color: #F59E0B;">🎯 OPPORTUNITY IDENTIFIED</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Brazil high-value transactions (>$500)</p>
+            </div>
+            <p style="font-size: 0.95rem; margin: 0 0 0.75rem 0; color: var(--neutral-700);">
+                <strong>Action:</strong> Enable network tokens for Brazilian issuers
+            </p>
+            <p style="font-size: 0.9rem; margin: 0; color: var(--neutral-600);">
+                <strong>Impact:</strong> +$2.3M/month (+6.8% approval rate)
+            </p>
+            <button class="modern-button" style="margin-top: 1rem; width: 100%; background: var(--warning);">
+                View Full Analysis →
+            </button>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class="modern-card slide-in-left" style="animation-delay: 100ms;">
+            <h4 style="color: var(--brand-primary); margin: 0 0 1rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔍</span> Root Cause Analysis Agent
+            </h4>
+            <div style="background: linear-gradient(135deg, #EF444420 0%, #EF444410 100%); border-left: 4px solid #EF4444; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <p style="margin: 0; font-weight: 600; color: #EF4444;">⚠️ ISSUE DETECTED</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">France approval rate dropped 3.2%</p>
+            </div>
+            <p style="font-size: 0.95rem; margin: 0 0 0.75rem 0; color: var(--neutral-700);">
+                <strong>Root Cause:</strong> BNP Paribas new fraud rules
+            </p>
+            <p style="font-size: 0.9rem; margin: 0; color: var(--neutral-600);">
+                <strong>Solution:</strong> Enable 3DS for their BINs (+2.8% recovery)
+            </p>
+            <button class="modern-button" style="margin-top: 1rem; width: 100%; background: var(--error);">
+                Fix Now →
+            </button>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("""
+        <div class="modern-card slide-in-left" style="animation-delay: 200ms;">
+            <h4 style="color: var(--brand-primary); margin: 0 0 1rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔮</span> Predictive Intelligence Agent
+            </h4>
+            <div style="background: linear-gradient(135deg, #3B82F620 0%, #3B82F610 100%); border-left: 4px solid #3B82F6; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <p style="margin: 0; font-weight: 600; color: #3B82F6;">📊 7-DAY FORECAST</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Approval rate: 94.2% → 95.3%</p>
+            </div>
+            <p style="font-size: 0.95rem; margin: 0 0 0.75rem 0; color: var(--neutral-700);">
+                <strong>Holiday Season:</strong> +23% volume expected
+            </p>
+            <p style="font-size: 0.9rem; margin: 0; color: var(--neutral-600);">
+                <strong>Action:</strong> Scale infrastructure by Dec 1 (30% capacity)
+            </p>
+            <button class="modern-button" style="margin-top: 1rem; width: 100%; background: var(--info);">
+                View Forecast →
+            </button>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # ========== APPROVAL TRENDS WITH REVENUE IMPACT ==========
+    st.markdown('<div class="section-header-modern">📈 Approval Rate & Revenue Trends</div>', unsafe_allow_html=True)
+    
+    if not checkout_data.empty and 'timestamp' in checkout_data.columns:
+        checkout_data['timestamp'] = pd.to_datetime(checkout_data['timestamp'])
+        hourly_stats = checkout_data.set_index('timestamp').resample('1H').agg({
+            'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
+            'transaction_id': 'count',
+            'amount': 'sum'
+        }).reset_index()
+        hourly_stats.columns = ['timestamp', 'approval_rate', 'transaction_count', 'revenue']
+        hourly_stats['revenue_millions'] = hourly_stats['revenue'] / 1e6
+        
+        # Create subplot with 3 traces
+        fig = make_subplots(
+            specs=[[{"secondary_y": True}]],
+            subplot_titles=["Approval Rate, Transaction Volume & Revenue Impact"]
+        )
+        
+        # Approval Rate (primary y-axis)
+        fig.add_trace(
+            go.Scatter(
+                x=hourly_stats['timestamp'],
+                y=hourly_stats['approval_rate'],
+                name='Approval Rate',
+                mode='lines+markers',
+                line=dict(color='#6366F1', width=3),
+                fill='tozeroy',
+                fillcolor='rgba(99, 102, 241, 0.1)',
+                hovertemplate='<b>Approval Rate</b><br>%{y:.1f}%<extra></extra>',
+                yaxis='y1'
+            ),
+            secondary_y=False
+        )
+        
+        # Transaction Volume (secondary y-axis)
+        fig.add_trace(
+            go.Bar(
+                x=hourly_stats['timestamp'],
+                y=hourly_stats['transaction_count'],
+                name='Transaction Volume',
+                marker_color='#8B5CF6',
+                opacity=0.4,
+                hovertemplate='<b>Volume</b><br>%{y:,} txns<extra></extra>',
+                yaxis='y2'
+            ),
+            secondary_y=True
+        )
+        
+        # Revenue (secondary y-axis, as line)
+        fig.add_trace(
+            go.Scatter(
+                x=hourly_stats['timestamp'],
+                y=hourly_stats['revenue_millions'],
+                name='Revenue ($M)',
+                mode='lines',
+                line=dict(color='#10B981', width=2, dash='dot'),
+                hovertemplate='<b>Revenue</b><br>$%{y:.2f}M<extra></extra>',
+                yaxis='y2'
+            ),
+            secondary_y=True
+        )
+        
+        fig.update_layout(
+            plot_bgcolor='#FFFFFF',
+            paper_bgcolor='#FFFFFF',
+            font_color='#111827',
+            height=450,
+            hovermode='x unified',
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+                bgcolor='rgba(255, 255, 255, 0.9)',
+                bordercolor='#E5E7EB',
+                borderwidth=1
+            ),
+            margin=dict(l=60, r=60, t=60, b=60)
+        )
+        
+        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#E5E7EB')
+        fig.update_yaxes(title_text="<b>Approval Rate (%)</b>", secondary_y=False, showgrid=True, gridwidth=1, gridcolor='#E5E7EB')
+        fig.update_yaxes(title_text="<b>Volume & Revenue</b>", secondary_y=True, showgrid=False)
+        
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    
+    st.markdown("---")
+    
+    # ========== GLOBAL PERFORMANCE & KEY INSIGHTS ==========
+    st.markdown('<div class="section-header-modern">🌍 Global Performance & Strategic Insights</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([1.5, 1])
+    
+    with col1:
+        if not checkout_data.empty and 'geography' in checkout_data.columns:
+            # Top countries with revenue
+            country_stats = checkout_data.groupby('geography').agg({
+                'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100,
+                'transaction_id': 'count',
+                'amount': 'sum'
+            }).reset_index()
+            country_stats.columns = ['country', 'approval_rate', 'txn_count', 'volume']
+            country_stats['volume_millions'] = country_stats['volume'] / 1e6
+            country_stats = country_stats.nlargest(10, 'volume')
+            
+            # Dual-axis chart: Approval Rate + Revenue
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            
+            fig.add_trace(
+                go.Bar(
+                    x=country_stats['country'],
+                    y=country_stats['approval_rate'],
+                    name='Approval Rate (%)',
+                    marker_color='#6366F1',
+                    text=country_stats['approval_rate'].round(1),
+                    textposition='outside',
+                    texttemplate='%{text}%',
+                    hovertemplate='<b>%{x}</b><br>Approval: %{y:.1f}%<extra></extra>'
+                ),
+                secondary_y=False
+            )
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=country_stats['country'],
+                    y=country_stats['volume_millions'],
+                    name='Revenue ($M)',
+                    mode='lines+markers',
+                    line=dict(color='#10B981', width=3),
+                    marker=dict(size=10),
+                    hovertemplate='<b>%{x}</b><br>Revenue: $%{y:.2f}M<extra></extra>'
+                ),
+                secondary_y=True
+            )
+            
+            fig.update_layout(
+                plot_bgcolor='#FFFFFF',
+                paper_bgcolor='#FFFFFF',
+                font_color='#111827',
+                height=400,
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                title=dict(text="<b>Top 10 Markets: Approval Rates & Revenue</b>", font=dict(size=16))
+            )
+            
+            fig.update_xaxes(showgrid=False, title="")
+            fig.update_yaxes(title_text="<b>Approval Rate (%)</b>", secondary_y=False, showgrid=True, gridwidth=1, gridcolor='#E5E7EB', range=[0, 100])
+            fig.update_yaxes(title_text="<b>Revenue ($M)</b>", secondary_y=True, showgrid=False)
+            
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    
+    with col2:
+        st.markdown('<h3 style="margin-top: 0; font-size: 1.3rem; font-weight: 700;">💡 Strategic Actions</h3>', unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div class="modern-card" style="background: linear-gradient(135deg, #10B98120 0%, #10B98110 100%); border-left: 4px solid #10B981; margin-bottom: 1rem;">
+            <p style="margin: 0; font-weight: 700; color: #10B981; font-size: 0.85rem;">✅ HIGH IMPACT</p>
+            <h4 style="margin: 0.5rem 0; font-size: 1.05rem; color: var(--neutral-900);">EU Performance Excellent</h4>
+            <p style="margin: 0; font-size: 0.9rem; color: var(--neutral-700);">
+                Approval rate up <strong>12%</strong> with 3DS+NetworkToken
+            </p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--neutral-600);">
+                💰 Revenue impact: <strong>+$3.2M this week</strong>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div class="modern-card" style="background: linear-gradient(135deg, #F59E0B20 0%, #F59E0B10 100%); border-left: 4px solid #F59E0B; margin-bottom: 1rem;">
+            <p style="margin: 0; font-weight: 700; color: #F59E0B; font-size: 0.85rem;">⚠️ ATTENTION NEEDED</p>
+            <h4 style="margin: 0.5rem 0; font-size: 1.05rem; color: var(--neutral-900);">LATAM Security Violations</h4>
+            <p style="margin: 0; font-size: 0.9rem; color: var(--neutral-700);">
+                Up <strong>35%</strong> in last 6 hours
+            </p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--neutral-600);">
+                🎯 Action: Engage issuer team + enable 3DS
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div class="modern-card" style="background: linear-gradient(135deg, #6366F120 0%, #6366F110 100%); border-left: 4px solid #6366F1; margin-bottom: 1rem;">
+            <p style="margin: 0; font-weight: 700; color: #6366F1; font-size: 0.85rem;">💰 REVENUE OPPORTUNITY</p>
+            <h4 style="margin: 0.5rem 0; font-size: 1.05rem; color: var(--neutral-900);">Smart Retry Optimization</h4>
+            <p style="margin: 0; font-size: 0.9rem; color: var(--neutral-700);">
+                <strong>450 transactions</strong> with >70% success probability
+            </p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--neutral-600);">
+                💵 Potential recovery: <strong>$127K today</strong>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div class="modern-card" style="background: linear-gradient(135deg, #8B5CF620 0%, #8B5CF610 100%); border-left: 4px solid #8B5CF6;">
+            <p style="margin: 0; font-weight: 700; color: #8B5CF6; font-size: 0.85rem;">🏆 COMPETITIVE EDGE</p>
+            <h4 style="margin: 0.5rem 0; font-size: 1.05rem; color: var(--neutral-900);">Market Position: #2 → #1</h4>
+            <p style="margin: 0; font-size: 0.9rem; color: var(--neutral-700);">
+                Close <strong>1.6% gap</strong> to industry leader
+            </p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--neutral-600);">
+                ⏱️ Timeline: 6-8 weeks with current initiatives
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
