@@ -732,7 +732,7 @@ def generate_synthetic_data(table_type):
 
 
 def show_premium_header():
-    """Display professional header with equal-sized PagoNxt and Getnet branding"""
+    """Display modern minimal header with equal-sized branding"""
     st.markdown("""
     <div class="premium-header">
         <div class="brand-title-container">
@@ -741,28 +741,22 @@ def show_premium_header():
             <span class="brand-name">Getnet</span>
         </div>
         <p class="subtitle">
-            Enterprise Payment Authorization Analytics Platform<br/>
-            <small style="opacity: 0.8;">Powered by Databricks Lakehouse • Real-time Analytics • 140+ Currencies</small>
+            Monitor health of your payment authorization business<br/>
+            <small style="opacity: 0.8;">Control and analyze your data in the easiest way</small>
         </p>
-        <div style="margin-top: 1.5rem;">
+        <div>
             <span class="status-badge">
-                <span style="display: inline-block; width: 8px; height: 8px; background: #00FF88; border-radius: 50%; margin-right: 8px; animation: pulse 2s infinite;"></span>
-                Live System
+                <span style="display: inline-block; width: 8px; height: 8px; background: #10B981; border-radius: 50%; margin-right: 6px;"></span>
+                Live
             </span>
-            <span class="status-badge" style="margin-left: 0.5rem;">
+            <span class="status-badge">
                 🌍 18 Countries
             </span>
-            <span class="status-badge" style="margin-left: 0.5rem;">
-                📊 5,000+ TPS
+            <span class="status-badge">
+                📊 5K+ TPS
             </span>
         </div>
     </div>
-    <style>
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    </style>
     """, unsafe_allow_html=True)
 
 
