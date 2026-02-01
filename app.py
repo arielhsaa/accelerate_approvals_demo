@@ -1451,31 +1451,26 @@ def show_executive_dashboard(checkout_data, decline_data, retry_data):
 
 
 def show_global_geo_analytics(checkout_data):
-    """Enhanced geo-location analytics with improved visualization and contrast"""
+    """Clean, professional geo-analytics page with proper map sizing"""
     
-    # Dark container
-    st.markdown('<div class="dark-map-container">', unsafe_allow_html=True)
+    st.markdown('<div style="padding: 1rem;">', unsafe_allow_html=True)
     
-    # Title with better contrast
+    # Clean header
     st.markdown("""
-    <div style="position: relative; z-index: 1; margin-bottom: 1.5rem;">
+    <div style="margin-bottom: 2rem;">
         <h1 style="
-            background: linear-gradient(135deg, #FFFFFF 0%, #F0E6FF 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2.25rem;
-            font-weight: 800;
+            color: #1F2937;
+            font-size: 2rem;
+            font-weight: 700;
             margin: 0 0 0.5rem 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        ">Global Analytics Dashboard</h1>
-        <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.95rem; margin: 0;">
-            Real-time Worldwide Transaction Monitoring
+        ">🗺️ Global Analytics</h1>
+        <p style="color: #6B7280; font-size: 1rem; margin: 0;">
+            Worldwide transaction performance and geographic distribution
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Data validation and loading
+    # Data validation
     if checkout_data.empty:
         checkout_data = generate_synthetic_data('payments_enriched_stream')
     
@@ -1496,7 +1491,7 @@ def show_global_geo_analytics(checkout_data):
             st.markdown('</div>', unsafe_allow_html=True)
             return
         
-        # Aggregate
+        # Aggregate by country
         agg_dict = {
             'approval_status': ['count', lambda x: (x == 'approved').sum()],
         }
@@ -1531,7 +1526,7 @@ def show_global_geo_analytics(checkout_data):
         geo_data = geo_data.sort_values('txn_count', ascending=False).reset_index(drop=True)
         
     except Exception as e:
-        st.error(f"⚠️ Error: {str(e)}")
+        st.error(f"⚠️ Error processing data: {str(e)}")
         st.markdown('</div>', unsafe_allow_html=True)
         return
     
@@ -1541,115 +1536,122 @@ def show_global_geo_analytics(checkout_data):
     appr_rate = (total_appr / total_txn * 100) if total_txn > 0 else 0
     total_vol = float(geo_data['total_volume'].sum())
     num_countries = len(geo_data)
-    avg_risk = geo_data['avg_risk'].mean() * 100
     
-    # Layout: Sidebar stats + Main map
-    col_sidebar, col_map = st.columns([1, 2.5])
+    # Top KPI Cards Row
+    st.markdown('<div style="margin-bottom: 2rem;">', unsafe_allow_html=True)
+    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
     
-    with col_sidebar:
-        # Stat card 1: Total Transactions
+    with kpi1:
         st.markdown(f"""
-        <div class="dark-stat-card">
-            <p class="dark-stat-label" style="font-size: 0.7rem; color: rgba(255,255,255,0.6);">TOTAL TRANSACTIONS</p>
-            <h1 class="dark-stat-value" style="font-size: 2.5rem; color: #FFFFFF;">{total_txn:,}</h1>
-            <p style="color: rgba(125, 211, 252, 0.9); font-size: 0.8rem; margin: 0.5rem 0 0 0;">
-                → Across {num_countries} countries
+        <div style="
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        ">
+            <p style="color: #6B7280; font-size: 0.875rem; font-weight: 600; margin: 0 0 0.5rem 0; text-transform: uppercase;">
+                Total Transactions
+            </p>
+            <p style="color: #1F2937; font-size: 2rem; font-weight: 700; margin: 0;">
+                {total_txn:,}
+            </p>
+            <p style="color: #10B981; font-size: 0.875rem; margin: 0.5rem 0 0 0;">
+                ↑ Active globally
             </p>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Stat card 2: Approval Rate with progress bar
+    
+    with kpi2:
         st.markdown(f"""
-        <div class="dark-stat-card">
-            <p class="dark-stat-label" style="font-size: 0.7rem; color: rgba(255,255,255,0.6);">APPROVAL RATE</p>
-            <h2 class="dark-stat-value" style="font-size: 2.2rem; color: #FFFFFF;">{appr_rate:.1f}%</h2>
-            <div style="margin-top: 1rem;">
-                <div style="background: rgba(50, 50, 70, 0.6); height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid rgba(100, 100, 150, 0.4);">
-                    <div style="background: linear-gradient(90deg, #10b981, #34d399); width: {appr_rate}%; height: 100%; box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);"></div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Stat card 3: Total Volume
-        st.markdown(f"""
-        <div class="dark-stat-card">
-            <p class="dark-stat-label" style="font-size: 0.7rem; color: rgba(255,255,255,0.6);">TOTAL VOLUME</p>
-            <h2 class="dark-stat-value" style="font-size: 1.9rem; color: #FFFFFF;">${total_vol:,.0f}</h2>
-            <p style="color: rgba(16, 185, 129, 0.9); font-size: 0.8rem; margin: 0.5rem 0 0 0;">
-                ▲ Global transactions
+        <div style="
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        ">
+            <p style="color: #6B7280; font-size: 0.875rem; font-weight: 600; margin: 0 0 0.5rem 0; text-transform: uppercase;">
+                Approval Rate
+            </p>
+            <p style="color: #1F2937; font-size: 2rem; font-weight: 700; margin: 0;">
+                {appr_rate:.1f}%
+            </p>
+            <p style="color: #6B7280; font-size: 0.875rem; margin: 0.5rem 0 0 0;">
+                Global average
             </p>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Top countries
-        st.markdown("""
-        <p style="color: rgba(255,255,255,0.7); font-size: 0.75rem; text-transform: uppercase; 
-        letter-spacing: 1px; margin: 1.5rem 0 0.8rem 0; font-weight: 600;">
-            TOP COUNTRIES
-        </p>
+    
+    with kpi3:
+        st.markdown(f"""
+        <div style="
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        ">
+            <p style="color: #6B7280; font-size: 0.875rem; font-weight: 600; margin: 0 0 0.5rem 0; text-transform: uppercase;">
+                Total Volume
+            </p>
+            <p style="color: #1F2937; font-size: 2rem; font-weight: 700; margin: 0;">
+                ${total_vol/1000:.1f}K
+            </p>
+            <p style="color: #6B7280; font-size: 0.875rem; margin: 0.5rem 0 0 0;">
+                Transaction value
+            </p>
+        </div>
         """, unsafe_allow_html=True)
-        
-        top_countries = geo_data.nlargest(5, 'txn_count')
-        flags = {
-            'United States': '🇺🇸', 'USA': '🇺🇸', 'France': '🇫🇷', 'China': '🇨🇳', 'Brazil': '🇧🇷',
-            'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'Germany': '🇩🇪', 'Japan': '🇯🇵', 'India': '🇮🇳',
-            'Canada': '🇨🇦', 'Mexico': '🇲🇽', 'Spain': '🇪🇸', 'Italy': '🇮🇹', 'Australia': '🇦🇺'
-        }
-        
-        for _, row in top_countries.iterrows():
-            flag = flags.get(row['country'], '🌍')
-            pct = (row['txn_count'] / total_txn * 100) if total_txn > 0 else 0
-            trend_color = '#10b981' if row['approval_rate'] >= 85 else '#ef4444'
-            
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(90deg, rgba(40, 35, 60, 0.7) 0%, rgba(30, 25, 50, 0.5) 100%);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(150, 150, 200, 0.3);
-                border-radius: 10px;
-                padding: 0.8rem 1rem;
-                margin: 0.4rem 0;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                transition: all 0.3s ease;
-            " onmouseover="this.style.borderColor='rgba(200,200,255,0.5)'; this.style.transform='translateX(4px)';" 
-               onmouseout="this.style.borderColor='rgba(150,150,200,0.3)'; this.style.transform='translateX(0)';">
-                <div style="display: flex; align-items: center; gap: 0.7rem;">
-                    <span style="width: 6px; height: 6px; background: {trend_color}; border-radius: 50%; 
-                    box-shadow: 0 0 8px {trend_color};"></span>
-                    <span style="font-size: 1.3rem;">{flag}</span>
-                    <span style="color: #FFFFFF; font-weight: 600; font-size: 0.85rem;">{row['country']}</span>
-                </div>
-                <div style="text-align: right;">
-                    <div style="color: #10b981; font-weight: 700; font-size: 0.95rem;">{int(row['txn_count']):,}</div>
-                    <div style="color: rgba(255,255,255,0.5); font-size: 0.7rem;">{pct:.1f}% • {row['approval_rate']:.0f}%</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    
+    with kpi4:
+        st.markdown(f"""
+        <div style="
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        ">
+            <p style="color: #6B7280; font-size: 0.875rem; font-weight: 600; margin: 0 0 0.5rem 0; text-transform: uppercase;">
+                Countries
+            </p>
+            <p style="color: #1F2937; font-size: 2rem; font-weight: 700; margin: 0;">
+                {num_countries}
+            </p>
+            <p style="color: #6B7280; font-size: 0.875rem; margin: 0.5rem 0 0 0;">
+                Active markets
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Main content: Map + Stats
+    col_map, col_stats = st.columns([2.5, 1])
     
     with col_map:
-        # Map container with better styling
+        # Map container
         st.markdown("""
         <div style="
-            background: rgba(25, 20, 40, 0.5);
-            border: 1px solid rgba(150, 150, 200, 0.3);
-            border-radius: 16px;
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
             padding: 1.5rem;
-            position: relative;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
         ">
-            <h3 style="color: #FFFFFF; font-size: 1.1rem; margin: 0 0 0.3rem 0; font-weight: 700;">
-                🗺️ Global Distribution Map
+            <h3 style="color: #1F2937; font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0;">
+                Global Distribution Map
             </h3>
-            <p style="color: rgba(255,255,255,0.6); font-size: 0.8rem; margin: 0 0 1rem 0;">
-                Color intensity represents approval rate • Hover for details
-            </p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Choropleth map with improved colors
+        # Create choropleth map with better colors
         if not geo_data.empty:
             try:
                 fig = px.choropleth(
@@ -1665,65 +1667,66 @@ def show_global_geo_analytics(checkout_data):
                         'total_volume': ':$,.0f'
                     },
                     color_continuous_scale=[
-                        [0.0, '#1e1b4b'],  # Deep indigo
-                        [0.3, '#4c1d95'],  # Purple
-                        [0.5, '#7c3aed'],  # Violet
-                        [0.7, '#a78bfa'],  # Light violet
-                        [0.9, '#c4b5fd'],  # Very light violet
-                        [1.0, '#e0e7ff']   # Almost white violet
+                        [0.0, '#FEE2E2'],  # Red 100
+                        [0.3, '#FCA5A5'],  # Red 300
+                        [0.5, '#FDE047'],  # Yellow 300
+                        [0.7, '#86EFAC'],  # Green 300
+                        [0.9, '#34D399'],  # Green 400
+                        [1.0, '#10B981']   # Green 500
                     ],
-                    range_color=[0, 100]
+                    range_color=[0, 100],
+                    labels={'approval_rate': 'Approval Rate (%)'}
                 )
                 
                 fig.update_layout(
-                    height=500,
+                    height=600,
                     margin=dict(l=0, r=0, t=0, b=0),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='white',
+                    plot_bgcolor='white',
                     geo=dict(
-                        bgcolor='rgba(0,0,0,0)',
-                        lakecolor='rgba(15, 10, 30, 0.95)',
-                        landcolor='rgba(25, 20, 45, 0.8)',
-                        oceancolor='rgba(10, 5, 25, 0.95)',
+                        bgcolor='#F9FAFB',
+                        lakecolor='#DBEAFE',
+                        landcolor='#F3F4F6',
+                        oceancolor='#E0F2FE',
                         showcountries=True,
-                        countrycolor='rgba(150, 150, 200, 0.4)',
-                        countrywidth=0.8,
+                        countrycolor='#D1D5DB',
+                        countrywidth=0.5,
                         showcoastlines=True,
-                        coastlinecolor='rgba(180, 180, 220, 0.5)',
-                        coastlinewidth=1,
+                        coastlinecolor='#9CA3AF',
+                        coastlinewidth=0.5,
                         projection=dict(type='natural earth'),
                         center=dict(lat=20, lon=0)
                     ),
-                    font=dict(family='Inter', color='white', size=11),
+                    font=dict(family='Inter', color='#1F2937', size=12),
                     coloraxis=dict(
                         colorbar=dict(
                             title=dict(
                                 text="Approval<br>Rate (%)",
-                                font=dict(color='rgba(255,255,255,0.9)', size=10),
+                                font=dict(color='#1F2937', size=11),
                                 side='right'
                             ),
-                            bgcolor='rgba(30, 25, 50, 0.95)',
-                            bordercolor='rgba(150, 150, 200, 0.5)',
-                            borderwidth=1.5,
-                            tickfont=dict(color='rgba(255,255,255,0.8)', size=9),
-                            tickcolor='rgba(150, 150, 200, 0.5)',
-                            thickness=16,
-                            len=260,
+                            bgcolor='white',
+                            bordercolor='#E5E7EB',
+                            borderwidth=1,
+                            tickfont=dict(color='#6B7280', size=10),
+                            tickcolor='#D1D5DB',
+                            thickness=18,
+                            len=300,
                             x=1.01
                         ),
                         cmin=0,
                         cmax=100
                     ),
                     hoverlabel=dict(
-                        bgcolor='rgba(20, 15, 35, 0.98)',
-                        bordercolor='rgba(180, 180, 220, 0.6)',
-                        font=dict(family='Inter', size=12, color='white')
+                        bgcolor='white',
+                        bordercolor='#E5E7EB',
+                        font=dict(family='Inter', size=12, color='#1F2937')
                     )
                 )
                 
                 fig.update_traces(
                     marker=dict(
-                        line=dict(color='rgba(200, 200, 240, 0.6)', width=1)
+                        line=dict(color='#9CA3AF', width=0.5)
                     )
                 )
                 
@@ -1731,43 +1734,71 @@ def show_global_geo_analytics(checkout_data):
                 
             except Exception as e:
                 st.error(f"⚠️ Map error: {str(e)}")
-                st.dataframe(geo_data[['country', 'txn_count', 'approval_rate']].head(10))
-        
-        # Bottom metrics row
-        st.markdown('<div style="margin-top: 1.5rem;">', unsafe_allow_html=True)
-        m1, m2, m3 = st.columns(3)
-        
-        with m1:
-            avg_txn_val = geo_data['avg_value'].mean()
-            st.markdown(f"""
-            <div style="background: rgba(30,25,50,0.7); border: 1px solid rgba(150,150,200,0.3); 
-            border-radius: 12px; padding: 1rem; text-align: center;">
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.7rem; margin: 0;">AVG TXN VALUE</p>
-                <p style="color: #FFFFFF; font-size: 1.4rem; font-weight: 700; margin: 0.3rem 0;">${avg_txn_val:,.2f}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with m2:
-            st.markdown(f"""
-            <div style="background: rgba(30,25,50,0.7); border: 1px solid rgba(150,150,200,0.3); 
-            border-radius: 12px; padding: 1rem; text-align: center;">
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.7rem; margin: 0;">AVG RISK SCORE</p>
-                <p style="color: #FFFFFF; font-size: 1.4rem; font-weight: 700; margin: 0.3rem 0;">{avg_risk:.1f}%</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with m3:
-            st.markdown(f"""
-            <div style="background: rgba(30,25,50,0.7); border: 1px solid rgba(150,150,200,0.3); 
-            border-radius: 12px; padding: 1rem; text-align: center;">
-                <p style="color: rgba(255,255,255,0.6); font-size: 0.7rem; margin: 0;">COUNTRIES ACTIVE</p>
-                <p style="color: #FFFFFF; font-size: 1.4rem; font-weight: 700; margin: 0.3rem 0;">{num_countries}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown('</div>', unsafe_allow_html=True)  # Close dark-map-container
+    with col_stats:
+        # Top Countries List
+        st.markdown("""
+        <div style="
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        ">
+            <h3 style="color: #1F2937; font-size: 1.125rem; font-weight: 700; margin: 0 0 1rem 0;">
+                Top Countries
+            </h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        top_countries = geo_data.nlargest(10, 'txn_count')
+        flags = {
+            'United States': '🇺🇸', 'USA': '🇺🇸', 'France': '🇫🇷', 'China': '🇨🇳', 
+            'Brazil': '🇧🇷', 'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'Germany': '🇩🇪',
+            'Japan': '🇯🇵', 'India': '🇮🇳', 'Canada': '🇨🇦', 'Mexico': '🇲🇽',
+            'Spain': '🇪🇸', 'Italy': '🇮🇹', 'Australia': '🇦🇺', 'Netherlands': '🇳🇱'
+        }
+        
+        for idx, row in top_countries.iterrows():
+            flag = flags.get(row['country'], '🌍')
+            pct = (row['txn_count'] / total_txn * 100) if total_txn > 0 else 0
+            
+            st.markdown(f"""
+            <div style="
+                background: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+                padding: 1rem;
+                margin: 0.5rem 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition: all 0.2s ease;
+            " onmouseover="this.style.borderColor='#3B82F6'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" 
+               onmouseout="this.style.borderColor='#E5E7EB'; this.style.boxShadow='none';">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 1.5rem;">{flag}</span>
+                    <div>
+                        <p style="color: #1F2937; font-weight: 600; font-size: 0.875rem; margin: 0;">
+                            {row['country']}
+                        </p>
+                        <p style="color: #6B7280; font-size: 0.75rem; margin: 0;">
+                            {pct:.1f}% of total
+                        </p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <p style="color: #1F2937; font-weight: 700; font-size: 1rem; margin: 0;">
+                        {int(row['txn_count']):,}
+                    </p>
+                    <p style="color: {'#10B981' if row['approval_rate'] >= 85 else '#EF4444'}; font-size: 0.75rem; margin: 0;">
+                        {row['approval_rate']:.1f}% approved
+                    </p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)  # Close main padding div
 
 
 
