@@ -712,6 +712,50 @@ def main():
     # Apply PagoNxt Getnet CSS theme
     st.markdown(PAGONXT_CSS, unsafe_allow_html=True)
     
+    # Apply Streamlit light theme overrides
+    st.markdown("""
+    <style>
+        /* Force light theme for Streamlit components */
+        [data-testid="stAppViewContainer"] {
+            background-color: #F8F9FA !important;
+        }
+        [data-testid="stSidebar"] {
+            background-color: #FFFFFF !important;
+            border-right: 1px solid #E2E8F0 !important;
+        }
+        [data-testid="stHeader"] {
+            background-color: #FFFFFF !important;
+        }
+        /* Text colors for light theme */
+        .stMarkdown, p, span, div {
+            color: #1A1F2E !important;
+        }
+        /* Metric styling */
+        [data-testid="stMetricValue"] {
+            color: #5B2C91 !important;
+        }
+        [data-testid="stMetricLabel"] {
+            color: #4A5568 !important;
+        }
+        /* Dataframe styling */
+        [data-testid="stDataFrame"] {
+            background-color: #FFFFFF !important;
+        }
+        /* Input widgets */
+        .stSelectbox, .stMultiSelect, .stSlider, .stTextInput {
+            background-color: #FFFFFF !important;
+        }
+        /* Buttons */
+        .stButton button {
+            background-color: #5B2C91 !important;
+            color: #FFFFFF !important;
+        }
+        .stButton button:hover {
+            background-color: #3D1C61 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     # Show premium header with PagoNxt Getnet branding
     show_premium_header()
     
