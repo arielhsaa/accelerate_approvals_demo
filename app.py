@@ -9,6 +9,68 @@ from streamlit_option_menu import option_menu
 import json
 import pydeck as pdk
 
+# ============================================================================
+# COLOR CONSTANTS - PagoNxt Getnet Branding
+# ============================================================================
+COLORS = {
+    'primary': '#5B2C91',      # PagoNxt Purple
+    'secondary': '#00A3E0',     # Getnet Blue
+    'accent': '#00D9FF',        # Bright Cyan
+    'success': '#00C389',       # Green
+    'warning': '#FFB020',       # Orange
+    'danger': '#FF3366',        # Red
+    'bg_dark': '#0F1419',       # Very dark background
+    'bg_darker': '#0A0E12',     # Darker background
+    'card_bg': '#1A1F2E',       # Card background
+    'text_primary': '#FFFFFF',  # White
+    'text_secondary': '#B8C5D0', # Light blue-grey
+    'border': '#2D3748',        # Border color
+    'grid': '#30363D'           # Grid color
+}
+
+# Plotly chart default config
+CHART_LAYOUT_DEFAULTS = {
+    'plot_bgcolor': COLORS['bg_dark'],
+    'paper_bgcolor': COLORS['card_bg'],
+    'font_color': COLORS['text_secondary'],
+    'showlegend': False
+}
+
+def apply_chart_layout(fig, height=400, **kwargs):
+    """Apply consistent PagoNxt styling to Plotly charts"""
+    layout_config = CHART_LAYOUT_DEFAULTS.copy()
+    layout_config['height'] = height
+    layout_config.update(kwargs)
+    
+    fig.update_layout(**layout_config)
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=COLORS['grid'])
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=COLORS['grid'])
+    
+    return fig
+
+# ============================================================================
+# APP METADATA
+# ============================================================================
+APP_INFO = {
+    'title': 'PagoNxt Getnet - Payment Authorization',
+    'icon': '💳',
+    'version': '3.0.0-premium',
+    'author': 'PagoNxt Getnet + Databricks',
+    'description': 'Enterprise Payment Authorization Analytics Platform'
+}
+
+# Navigation menu configuration
+NAV_MENU = [
+    {"label": "Executive Dashboard", "icon": "📊"},
+    {"label": "Global Geo-Analytics", "icon": "🗺️"},
+    {"label": "Smart Checkout", "icon": "🎯"},
+    {"label": "Decline Analysis", "icon": "📉"},
+    {"label": "Smart Retry", "icon": "🔄"},
+    {"label": "Performance Metrics", "icon": "📊"},
+    {"label": "Genie AI Assistant", "icon": "🤖"},
+    {"label": "Settings & Config", "icon": "⚙️"}
+]
+
 # PagoNxt Getnet themed CSS - Define as constant, apply in main()
 PAGONXT_CSS = """
 <style>
@@ -443,6 +505,34 @@ PAGONXT_CSS = """
 # ============================================================================
 
 
+
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+def safe_division(numerator, denominator, default=0):
+    """Safely divide two numbers, returning default if denominator is 0"""
+    try:
+        return numerator / denominator if denominator != 0 else default
+    except (TypeError, ZeroDivisionError):
+        return default
+
+def calculate_approval_rate(data, status_col='approval_status'):
+    """Calculate approval rate from transaction data"""
+    if data.empty or status_col not in data.columns:
+        return 0.0
+    approved = (data[status_col] == 'approved').sum()
+    return safe_division(approved, len(data), 0) * 100
+
+def validate_required_columns(df, required_cols):
+    """Check if dataframe has required columns"""
+    if df.empty:
+        return False, "Data is empty"
+    missing = [col for col in required_cols if col not in df.columns]
+    if missing:
+        return False, f"Missing columns: {', '.join(missing)}"
+    return True, "Valid"
 
 
 def load_data_from_delta(table_name, limit=10000):
