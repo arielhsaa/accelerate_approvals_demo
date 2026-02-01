@@ -1397,62 +1397,62 @@ def show_smart_checkout(checkout_data):
     # Solution mix performance
     try:
         if 'recommended_solution_name' in checkout_data.columns and 'approval_status' in checkout_data.columns:
-        solution_stats = checkout_data.groupby('recommended_solution_name').agg({
-            'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100,
-            'transaction_id': 'count',
-            'risk_score': 'mean'
-        }).reset_index()
-        solution_stats.columns = ['solution', 'approval_rate', 'txn_count', 'avg_risk']
-        solution_stats = solution_stats.sort_values('approval_rate', ascending=False)
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("### 🎯 Solution Mix Performance")
-            fig = px.bar(
-                solution_stats,
-                x='approval_rate',
-                y='solution',
-                orientation='h',
-                color='approval_rate',
-                color_continuous_scale='Greens',
-                text='approval_rate',
-                labels={'approval_rate': 'Approval Rate (%)'}
+            solution_stats = checkout_data.groupby('recommended_solution_name').agg({
+                'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100,
+                'transaction_id': 'count',
+                'risk_score': 'mean'
+            }).reset_index()
+            solution_stats.columns = ['solution', 'approval_rate', 'txn_count', 'avg_risk']
+            solution_stats = solution_stats.sort_values('approval_rate', ascending=False)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("### 🎯 Solution Mix Performance")
+                fig = px.bar(
+                    solution_stats,
+                    x='approval_rate',
+                    y='solution',
+                    orientation='h',
+                    color='approval_rate',
+                    color_continuous_scale='Greens',
+                    text='approval_rate',
+                    labels={'approval_rate': 'Approval Rate (%)'}
+                )
+                fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                fig.update_layout(
+                    plot_bgcolor='#0D1117',
+                    paper_bgcolor='#161B22',
+                    font_color='#C9D1D9',
+                    height=500,
+                    showlegend=False
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                st.markdown("### 📊 Transaction Distribution")
+                fig = px.pie(
+                    solution_stats,
+                    values='txn_count',
+                    names='solution',
+                    hole=0.5,
+                    color_discrete_sequence=px.colors.sequential.RdBu
+                )
+                fig.update_layout(
+                    plot_bgcolor='#0D1117',
+                    paper_bgcolor='#161B22',
+                    font_color='#C9D1D9',
+                    height=500
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Detailed table
+            st.markdown("### 📋 Detailed Solution Performance")
+            st.dataframe(
+                solution_stats.style.background_gradient(subset=['approval_rate'], cmap='Greens'),
+                use_container_width=True,
+                height=400
             )
-            fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-            fig.update_layout(
-                plot_bgcolor='#0D1117',
-                paper_bgcolor='#161B22',
-                font_color='#C9D1D9',
-                height=500,
-                showlegend=False
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            st.markdown("### 📊 Transaction Distribution")
-            fig = px.pie(
-                solution_stats,
-                values='txn_count',
-                names='solution',
-                hole=0.5,
-                color_discrete_sequence=px.colors.sequential.RdBu
-            )
-            fig.update_layout(
-                plot_bgcolor='#0D1117',
-                paper_bgcolor='#161B22',
-                font_color='#C9D1D9',
-                height=500
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        
-        # Detailed table
-        st.markdown("### 📋 Detailed Solution Performance")
-        st.dataframe(
-            solution_stats.style.background_gradient(subset=['approval_rate'], cmap='Greens'),
-            use_container_width=True,
-            height=400
-        )
     except Exception as e:
         st.error(f"⚠️ Error rendering Smart Checkout analytics: {str(e)}")
         st.info("Please ensure the data includes 'recommended_solution_name', 'approval_status', 'transaction_id', and 'risk_score' columns.")
