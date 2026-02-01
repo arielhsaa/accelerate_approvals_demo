@@ -481,9 +481,10 @@ def generate_synthetic_data(table_type):
         countries = ['USA', 'UK', 'Germany', 'France', 'Spain', 'Italy', 'Brazil', 'Mexico', 'Canada', 'Australia', 
                     'Japan', 'India', 'China', 'Singapore', 'Netherlands', 'Belgium', 'Sweden', 'Norway']
         
-        # Generate country data with realistic distribution
-        country_weights = [0.25, 0.15, 0.10, 0.08, 0.06, 0.05, 0.05, 0.04, 0.04, 0.03,
-                          0.03, 0.03, 0.02, 0.02, 0.02, 0.02, 0.01, 0.01]
+        # Generate country data with realistic distribution - normalized to ensure sum = 1.0
+        country_weights = np.array([0.25, 0.15, 0.10, 0.08, 0.06, 0.05, 0.05, 0.04, 0.04, 0.03,
+                                    0.03, 0.03, 0.02, 0.02, 0.02, 0.02, 0.01, 0.01])
+        country_weights = country_weights / country_weights.sum()  # Normalize to sum to 1.0
         
         df = pd.DataFrame({
             'transaction_id': [f'TXN{str(i).zfill(8)}' for i in range(1, n+1)],
