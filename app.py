@@ -976,140 +976,213 @@ def show_global_geo_analytics(checkout_data):
     st.markdown("---")
     
     # Prepare geo data
-    if 'geography' in checkout_data.columns and 'latitude' in checkout_data.columns:
-        geo_data = checkout_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg({
-            'approval_status': [
-                lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
-                'count'
-            ],
-            'amount': ['sum', 'mean'],
-            'risk_score': 'mean'
-        }).reset_index()
-        
-        geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'total_volume', 'avg_value', 'avg_risk']
-        geo_data = geo_data[geo_data['txn_count'] >= min_transactions]
+    if 'geography' in checkout_data.columns and 'latitude' in checkout_data.columns and 'longitude' in checkout_data.columns:
+        try:
+            geo_data = checkout_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg({
+                'approval_status': [
+                    lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
+                    'count'
+                ],
+                'amount': ['sum', 'mean'],
+                'risk_score': 'mean'
+            }).reset_index()
+            
+            geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'total_volume', 'avg_value', 'avg_risk']
+            geo_data = geo_data[geo_data['txn_count'] >= min_transactions]
+        except Exception as e:
+            st.error(f"Error preparing geo data: {e}")
+            st.info("Regenerating data with proper geo columns...")
+            checkout_data = generate_synthetic_data('payments_enriched_stream')
+            
+            if 'geography' not in checkout_data.columns or 'latitude' not in checkout_data.columns:
+                st.error("Unable to generate geo data. Check data generation function.")
+                return
+            
+            geo_data = checkout_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg({
+                'approval_status': [
+                    lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
+                    'count'
+                ],
+                'amount': ['sum', 'mean'],
+                'risk_score': 'mean'
+            }).reset_index()
+            
+            geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'total_volume', 'avg_value', 'avg_risk']
+            geo_data = geo_data[geo_data['txn_count'] >= min_transactions]
         
         # Tabs for different visualizations
         tab1, tab2, tab3, tab4 = st.tabs(["🗺️ Interactive Map", "🌍 Choropleth", "📊 Country Rankings", "🔍 Drill-Down"])
         
         with tab1:
             st.markdown("### Interactive Global Transaction Map")
+            st.info("💡 Hover over bubbles to see country details. Bubble size = transaction volume, color = approval rate")
             
             # Create bubble map with PyDeck
             if not geo_data.empty:
-                # Normalize values for bubble size
-                geo_data['size'] = (geo_data['txn_count'] / geo_data['txn_count'].max() * 1000000).fillna(0)
-                geo_data['color'] = geo_data['approval_rate'].apply(
-                    lambda x: [63, 185, 80, 200] if x >= 90 else 
-                             [210, 153, 34, 200] if x >= 80 else 
-                             [248, 81, 73, 200]
-                )
+                try:
+                    # Normalize values for bubble size
+                    geo_data['size'] = (geo_data['txn_count'] / geo_data['txn_count'].max() * 1000000).fillna(0)
+                    
+                    # Color based on approval rate (using list format for RGBA)
+                    def get_color(approval_rate):
+                        if approval_rate >= 90:
+                            return [91, 44, 145, 200]  # PagoNxt purple for high approval
+                        elif approval_rate >= 80:
+                            return [0, 163, 224, 200]  # Getnet blue for medium
+                        else:
+                            return [255, 51, 102, 200]  # Red for low
+                    
+                    geo_data['color'] = geo_data['approval_rate'].apply(get_color)
+                    
+                    # Create PyDeck layer
+                    layer = pdk.Layer(
+                        "ScatterplotLayer",
+                        data=geo_data,
+                        get_position=['lon', 'lat'],
+                        get_radius='size',
+                        get_fill_color='color',
+                        pickable=True,
+                        opacity=0.7,
+                        stroked=True,
+                        filled=True,
+                        radius_scale=1,
+                        radius_min_pixels=8,
+                        radius_max_pixels=80,
+                        line_width_min_pixels=2,
+                        get_line_color=[0, 217, 255, 100],  # Cyan border
+                    )
+                    
+                    # Set viewport
+                    view_state = pdk.ViewState(
+                        latitude=20,
+                        longitude=0,
+                        zoom=1.5,
+                        pitch=0,
+                        bearing=0
+                    )
+                    
+                    # Create deck with tooltip
+                    deck = pdk.Deck(
+                        layers=[layer],
+                        initial_view_state=view_state,
+                        tooltip={
+                            "html": "<b>{country}</b><br/>"
+                                   "Approval Rate: {approval_rate:.1f}%<br/>"
+                                   "Transactions: {txn_count:,}<br/>"
+                                   "Volume: ${total_volume:,.0f}<br/>"
+                                   "Avg Value: ${avg_value:.2f}",
+                            "style": {
+                                "backgroundColor": "#1A1F2E",
+                                "color": "#FFFFFF",
+                                "border": "2px solid #5B2C91",
+                                "borderRadius": "8px",
+                                "padding": "12px",
+                                "fontSize": "14px"
+                            }
+                        },
+                        map_style='mapbox://styles/mapbox/dark-v10'
+                    )
+                    
+                    st.pydeck_chart(deck, use_container_width=True)
+                    
+                    # Legend with PagoNxt colors
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.markdown('<span style="color: #5B2C91; font-size: 20px;">●</span> Approval Rate ≥ 90%', unsafe_allow_html=True)
+                    with col2:
+                        st.markdown('<span style="color: #00A3E0; font-size: 20px;">●</span> Approval Rate 80-90%', unsafe_allow_html=True)
+                    with col3:
+                        st.markdown('<span style="color: #FF3366; font-size: 20px;">●</span> Approval Rate < 80%', unsafe_allow_html=True)
                 
-                # Create PyDeck layer
-                layer = pdk.Layer(
-                    "ScatterplotLayer",
-                    data=geo_data,
-                    get_position=['lon', 'lat'],
-                    get_radius='size',
-                    get_fill_color='color',
-                    pickable=True,
-                    opacity=0.6,
-                    stroked=True,
-                    filled=True,
-                    radius_scale=1,
-                    radius_min_pixels=5,
-                    radius_max_pixels=100,
-                    line_width_min_pixels=1,
-                )
-                
-                # Set viewport
-                view_state = pdk.ViewState(
-                    latitude=20,
-                    longitude=0,
-                    zoom=1.5,
-                    pitch=0,
-                )
-                
-                # Create deck
-                deck = pdk.Deck(
-                    layers=[layer],
-                    initial_view_state=view_state,
-                    tooltip={
-                        "html": "<b>{country}</b><br/>"
-                               "Approval Rate: {approval_rate:.1f}%<br/>"
-                               "Transactions: {txn_count:,}<br/>"
-                               "Volume: ${total_volume:,.0f}<br/>"
-                               "Avg Value: ${avg_value:.2f}",
-                        "style": {
-                            "backgroundColor": "#161B22",
-                            "color": "#E6EDF3",
-                            "border": "1px solid #30363D",
-                            "borderRadius": "8px",
-                            "padding": "10px"
-                        }
-                    },
-                    map_style='mapbox://styles/mapbox/dark-v10'
-                )
-                
-                st.pydeck_chart(deck)
-                
-                # Legend
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.markdown('<span style="color: #3FB950;">●</span> Approval Rate ≥ 90%', unsafe_allow_html=True)
-                with col2:
-                    st.markdown('<span style="color: #D29922;">●</span> Approval Rate 80-90%', unsafe_allow_html=True)
-                with col3:
-                    st.markdown('<span style="color: #F85149;">●</span> Approval Rate < 80%', unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Error rendering PyDeck map: {e}")
+                    st.info("PyDeck maps require WebGL support. Try the Choropleth tab instead.")
+            else:
+                st.warning("No data available after filtering. Adjust filters to see map.")
         
         with tab2:
             st.markdown("### World Choropleth Map")
+            st.info("💡 Countries colored by approval rate. Hover for details.")
             
             if not geo_data.empty:
-                # Create choropleth map
-                fig = px.choropleth(
-                    geo_data,
-                    locations='country_code',
-                    color='approval_rate',
-                    hover_name='country',
-                    hover_data={
-                        'country_code': False,
-                        'approval_rate': ':.1f',
-                        'txn_count': ':,',
-                        'total_volume': ':$,.0f',
-                        'avg_risk': ':.3f'
-                    },
-                    color_continuous_scale=[
-                        [0.0, '#F85149'],
-                        [0.5, '#D29922'],
-                        [1.0, '#3FB950']
-                    ],
-                    range_color=[0, 100],
-                    labels={'approval_rate': 'Approval Rate (%)'}
-                )
+                try:
+                    # Create choropleth map with PagoNxt colors
+                    fig = px.choropleth(
+                        geo_data,
+                        locations='country_code',
+                        color='approval_rate',
+                        hover_name='country',
+                        hover_data={
+                            'country_code': False,
+                            'approval_rate': ':.1f',
+                            'txn_count': ':,',
+                            'total_volume': ':$,.0f',
+                            'avg_risk': ':.3f'
+                        },
+                        color_continuous_scale=[
+                            [0.0, '#FF3366'],  # Red for low
+                            [0.5, '#FFB020'],  # Orange for medium
+                            [1.0, '#5B2C91']   # PagoNxt purple for high
+                        ],
+                        range_color=[0, 100],
+                        labels={'approval_rate': 'Approval Rate (%)'}
+                    )
+                    
+                    fig.update_geos(
+                        showcountries=True,
+                        countrycolor="#2D3748",
+                        showcoastlines=True,
+                        coastlinecolor="#4A5568",
+                        showland=True,
+                        landcolor="#0F1419",
+                        showocean=True,
+                        oceancolor="#0A0E12",
+                        projection_type='natural earth',
+                        bgcolor='#0F1419'
+                    )
+                    
+                    fig.update_layout(
+                        plot_bgcolor='#0F1419',
+                        paper_bgcolor='#1A1F2E',
+                        font_color='#B8C5D0',
+                        height=600,
+                        margin=dict(l=0, r=0, t=30, b=0),
+                        coloraxis_colorbar=dict(
+                            title="Approval Rate (%)",
+                            ticksuffix="%",
+                            thickness=15,
+                            len=0.7,
+                            bgcolor='#1A1F2E',
+                            bordercolor='#2D3748',
+                            borderwidth=2
+                        )
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
                 
-                fig.update_geos(
-                    showcountries=True,
-                    countrycolor="#30363D",
-                    showcoastlines=True,
-                    coastlinecolor="#30363D",
-                    showland=True,
-                    landcolor="#0D1117",
-                    showocean=True,
-                    oceancolor="#010409",
-                    projection_type='natural earth',
-                    bgcolor='#161B22'
-                )
-                
-                fig.update_layout(
-                    height=600,
-                    paper_bgcolor='#161B22',
-                    font_color='#C9D1D9',
-                    geo=dict(bgcolor='#161B22'),
-                    margin=dict(l=0, r=0, t=0, b=0)
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Error rendering choropleth map: {e}")
+                    st.info("Using fallback visualization...")
+                    
+                    # Fallback: simple bar chart
+                    fig = px.bar(
+                        geo_data.nlargest(20, 'approval_rate'),
+                        x='approval_rate',
+                        y='country',
+                        orientation='h',
+                        color='approval_rate',
+                        color_continuous_scale='Purples',
+                        title="Top 20 Countries by Approval Rate"
+                    )
+                    fig.update_layout(
+                        plot_bgcolor='#0F1419',
+                        paper_bgcolor='#1A1F2E',
+                        font_color='#B8C5D0',
+                        height=600
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("No data available after filtering. Adjust filters to see map.")
         
         with tab3:
             st.markdown("### Country Performance Rankings")
