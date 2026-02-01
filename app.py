@@ -937,6 +937,11 @@ def show_global_geo_analytics(checkout_data):
     </div>
     """, unsafe_allow_html=True)
     
+    # Ensure we have valid geo data
+    if checkout_data.empty or 'latitude' not in checkout_data.columns or 'longitude' not in checkout_data.columns:
+        st.info("🔄 Loading geo-analytics data...")
+        checkout_data = generate_synthetic_data('payments_enriched_stream')
+    
     if checkout_data.empty:
         st.warning("No data available for geo-analytics")
         return
@@ -1024,12 +1029,19 @@ def show_global_geo_analytics(checkout_data):
         tab1, tab2, tab3, tab4 = st.tabs(["🗺️ Interactive Map", "🌍 Choropleth", "📊 Country Rankings", "🔍 Drill-Down"])
         
         with tab1:
-            st.markdown("### Interactive Global Transaction Map")
+            st.markdown("### 🗺️ Interactive Global Transaction Map")
             st.info("💡 Hover over bubbles to see country details. Bubble size = transaction volume, color = approval rate")
             
             # Create bubble map with PyDeck
             if not geo_data.empty:
                 try:
+                    # Validate required columns
+                    required_cols = ['lat', 'lon', 'approval_rate', 'txn_count', 'country']
+                    missing_cols = [col for col in required_cols if col not in geo_data.columns]
+                    
+                    if missing_cols:
+                        raise ValueError(f"Missing required columns: {missing_cols}")
+                    
                     # Normalize values for bubble size
                     geo_data['size'] = (geo_data['txn_count'] / geo_data['txn_count'].max() * 1000000).fillna(0)
                     
@@ -1043,6 +1055,8 @@ def show_global_geo_analytics(checkout_data):
                             return [255, 51, 102, 200]  # Red for low
                     
                     geo_data['color'] = geo_data['approval_rate'].apply(get_color)
+                    
+                    st.write(f"📍 Showing {len(geo_data)} countries on the map")
                     
                     # Create PyDeck layer
                     layer = pdk.Layer(
@@ -1093,7 +1107,7 @@ def show_global_geo_analytics(checkout_data):
                         map_style='mapbox://styles/mapbox/dark-v10'
                     )
                     
-                    st.pydeck_chart(deck, use_container_width=True)
+                    st.pydeck_chart(deck, use_container_width=True, height=600)
                     
                     # Legend with PagoNxt colors
                     col1, col2, col3 = st.columns(3)
@@ -1103,10 +1117,53 @@ def show_global_geo_analytics(checkout_data):
                         st.markdown('<span style="color: #00A3E0; font-size: 20px;">●</span> Approval Rate 80-90%', unsafe_allow_html=True)
                     with col3:
                         st.markdown('<span style="color: #FF3366; font-size: 20px;">●</span> Approval Rate < 80%', unsafe_allow_html=True)
+                    
+                    # Show sample data for debugging
+                    with st.expander("🔍 View Sample Map Data"):
+                        st.dataframe(geo_data.head(10), use_container_width=True)
                 
                 except Exception as e:
-                    st.error(f"Error rendering PyDeck map: {e}")
-                    st.info("PyDeck maps require WebGL support. Try the Choropleth tab instead.")
+                    st.error(f"⚠️ Error rendering PyDeck map: {str(e)}")
+                    st.warning("Using alternative visualization. PyDeck maps require WebGL support in your browser.")
+                    
+                    # Fallback to simple scatter plot
+                    try:
+                        fig = px.scatter_geo(
+                            geo_data,
+                            lat='lat',
+                            lon='lon',
+                            size='txn_count',
+                            color='approval_rate',
+                            hover_name='country',
+                            hover_data=['approval_rate', 'txn_count', 'total_volume'],
+                            color_continuous_scale='Purples',
+                            size_max=50,
+                            projection='natural earth'
+                        )
+                        
+                        fig.update_geos(
+                            showcountries=True,
+                            countrycolor="#2D3748",
+                            showcoastlines=True,
+                            coastlinecolor="#4A5568",
+                            showland=True,
+                            landcolor="#0F1419",
+                            showocean=True,
+                            oceancolor="#0A0E12",
+                            bgcolor='#0F1419'
+                        )
+                        
+                        fig.update_layout(
+                            height=600,
+                            plot_bgcolor='#0F1419',
+                            paper_bgcolor='#1A1F2E',
+                            font_color='#B8C5D0'
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as fallback_error:
+                        st.error(f"⚠️ Fallback visualization also failed: {str(fallback_error)}")
+                        st.info("Try the Choropleth or Country Rankings tabs instead.")
             else:
                 st.warning("No data available after filtering. Adjust filters to see map.")
         
