@@ -74,103 +74,129 @@ NAV_MENU = [
 # PagoNxt Getnet themed CSS - Define as constant, apply in main()
 PAGONXT_CSS = """
 <style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    /* Import Professional Fonts - Inter for body, Space Grotesk for headings */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
     
-    /* Root variables - PagoNxt Getnet LIGHT THEME color palette */
+    /* Root variables - Professional PagoNxt Getnet color palette */
     :root {
-        --primary-color: #5B2C91;        /* PagoNxt Purple */
-        --primary-dark: #3D1C61;         /* Darker Purple */
-        --primary-light: #9B6FC7;        /* Lighter Purple */
-        --secondary-color: #00A3E0;      /* Getnet Blue */
-        --accent-color: #00D9FF;         /* Bright Cyan accent */
-        --success-color: #00C389;        /* Green for success */
-        --warning-color: #FFB020;        /* Orange for warnings */
-        --danger-color: #FF3366;         /* Red for danger */
-        --background-light: #FFFFFF;     /* White background */
-        --background-lighter: #F8F9FA;   /* Very light grey */
+        --primary-purple: #6B2C91;       /* PagoNxt Professional Purple */
+        --primary-dark: #4A1F6B;         /* Deeper Purple */
+        --primary-light: #8B4FAF;        /* Lighter Purple */
+        --secondary-blue: #0099D8;       /* Getnet Professional Blue */
+        --accent-cyan: #00C7E6;          /* Accent Cyan */
+        --success-color: #00B67A;        /* Professional Green */
+        --warning-color: #FFA726;        /* Professional Orange */
+        --danger-color: #EF4444;         /* Professional Red */
+        --background-light: #FFFFFF;     /* Pure White */
+        --background-grey: #F7F9FC;      /* Very light blue-grey */
         --card-background: #FFFFFF;      /* White cards */
-        --card-background-hover: #F8F9FA; /* Light hover state */
-        --text-primary: #1A1F2E;         /* Dark text */
-        --text-secondary: #4A5568;       /* Grey text */
-        --text-muted: #718096;           /* Muted grey text */
-        --border-color: #E2E8F0;         /* Light border */
-        --border-color-hover: #CBD5E0;   /* Border hover */
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --card-hover: #F7F9FC;           /* Light hover */
+        --text-primary: #0F172A;         /* Near black */
+        --text-secondary: #475569;       /* Professional grey */
+        --text-muted: #64748B;           /* Muted grey */
+        --border-light: #E2E8F0;         /* Light border */
+        --border-medium: #CBD5E0;        /* Medium border */
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
         --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
         --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
     }
     
-    /* Global styles */
+    /* Global Typography */
     * {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Headings use Space Grotesk for modern corporate feel */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Space Grotesk', 'Inter', sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.02em;
     }
     
     .main {
-        background-color: var(--background-lighter);
+        background-color: var(--background-grey);
     }
     
-    /* Streamlit specific overrides for light theme */
+    /* Streamlit overrides */
     .stApp {
-        background-color: var(--background-lighter);
+        background-color: var(--background-grey);
     }
     
-    /* PagoNxt Getnet header with gradient */
+    /* Professional Header - Clean and Corporate */
     .premium-header {
-        background: linear-gradient(135deg, #5B2C91 0%, #7B3FB2 50%, #00A3E0 100%);
-        padding: 2.5rem 2rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        box-shadow: var(--shadow-xl);
+        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-dark) 100%);
+        padding: 3rem 2.5rem;
+        border-radius: 12px;
+        margin-bottom: 2.5rem;
+        box-shadow: var(--shadow-lg);
         position: relative;
         overflow: hidden;
-        border-left: 6px solid var(--accent-color);
     }
     
     .premium-header::before {
         content: '';
         position: absolute;
         top: 0;
-        left: 0;
         right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,101.3C1248,85,1344,75,1392,69.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
-        background-size: cover;
-        opacity: 0.3;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent 0%, var(--secondary-blue) 100%);
+        opacity: 0.15;
     }
     
-    .premium-header h1 {
+    /* Brand Title Container */
+    .brand-title-container {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Equal-sized brand names */
+    .brand-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
         color: white;
-        font-size: 3rem;
-        font-weight: 800;
         margin: 0;
-        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
-        letter-spacing: -0.5px;
-        position: relative;
-        z-index: 1;
+        line-height: 1.2;
     }
     
-    .premium-header p {
-        color: rgba(255, 255, 255, 0.95);
-        font-size: 1.2rem;
-        margin-top: 0.75rem;
-        font-weight: 500;
+    .brand-separator {
+        font-size: 2rem;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 300;
+    }
+    
+    .premium-header .subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        margin-top: 1rem;
+        font-weight: 400;
         position: relative;
         z-index: 1;
+        line-height: 1.6;
     }
     
     .premium-header .status-badge {
         display: inline-block;
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(10px);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        margin-top: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 0.6rem 1.2rem;
+        border-radius: 24px;
+        font-size: 0.875rem;
+        margin-top: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.25);
         position: relative;
         z-index: 1;
+        font-weight: 500;
+        color: white;
     }
     
     /* Enhanced KPI Cards - Santander Style */
@@ -666,28 +692,37 @@ def generate_synthetic_data(table_type):
 
 
 def show_premium_header():
-    """Display premium header with live status and PagoNxt Getnet branding"""
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    st.markdown(f"""
+    """Display professional header with equal-sized PagoNxt and Getnet branding"""
+    st.markdown("""
     <div class="premium-header">
-        <h1>💳 PagoNxt Getnet Payment Authorization</h1>
-        <p>Real-time global payment intelligence powered by Databricks Lakehouse</p>
-        <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+        <div class="brand-title-container">
+            <span class="brand-name">PagoNxt</span>
+            <span class="brand-separator">×</span>
+            <span class="brand-name">Getnet</span>
+        </div>
+        <p class="subtitle">
+            Enterprise Payment Authorization Analytics Platform<br/>
+            <small style="opacity: 0.8;">Powered by Databricks Lakehouse • Real-time Analytics • 140+ Currencies</small>
+        </p>
+        <div style="margin-top: 1.5rem;">
             <span class="status-badge">
-                <span class="pulse" style="color: #3FB950;">●</span> Live Streaming
+                <span style="display: inline-block; width: 8px; height: 8px; background: #00FF88; border-radius: 50%; margin-right: 8px; animation: pulse 2s infinite;"></span>
+                Live System
             </span>
-            <span class="status-badge">
+            <span class="status-badge" style="margin-left: 0.5rem;">
                 🌍 18 Countries
             </span>
-            <span class="status-badge">
-                📊 5,000+ Transactions/min
-            </span>
-            <span class="status-badge">
-                ⏱️ Last Updated: {current_time}
+            <span class="status-badge" style="margin-left: 0.5rem;">
+                📊 5,000+ TPS
             </span>
         </div>
     </div>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
     """, unsafe_allow_html=True)
 
 
