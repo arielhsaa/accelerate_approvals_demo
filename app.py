@@ -10,34 +10,34 @@ import json
 import pydeck as pdk
 
 # ============================================================================
-# COLOR CONSTANTS - PagoNxt Getnet Branding
+# COLOR CONSTANTS - PagoNxt Getnet Branding (LIGHT THEME)
 # ============================================================================
 COLORS = {
-    'primary': '#5B2C91',      # PagoNxt Purple
+    'primary': '#5B2C91',       # PagoNxt Purple
     'secondary': '#00A3E0',     # Getnet Blue
     'accent': '#00D9FF',        # Bright Cyan
     'success': '#00C389',       # Green
     'warning': '#FFB020',       # Orange
     'danger': '#FF3366',        # Red
-    'bg_dark': '#0F1419',       # Very dark background
-    'bg_darker': '#0A0E12',     # Darker background
-    'card_bg': '#1A1F2E',       # Card background
-    'text_primary': '#FFFFFF',  # White
-    'text_secondary': '#B8C5D0', # Light blue-grey
-    'border': '#2D3748',        # Border color
-    'grid': '#30363D'           # Grid color
+    'bg_light': '#FFFFFF',      # White background
+    'bg_lighter': '#F8F9FA',    # Very light grey
+    'card_bg': '#FFFFFF',       # White cards
+    'text_primary': '#1A1F2E',  # Dark text
+    'text_secondary': '#4A5568', # Grey text
+    'border': '#E2E8F0',        # Light border
+    'grid': '#E2E8F0'           # Light grid
 }
 
-# Plotly chart default config
+# Plotly chart default config (LIGHT THEME)
 CHART_LAYOUT_DEFAULTS = {
-    'plot_bgcolor': COLORS['bg_dark'],
-    'paper_bgcolor': COLORS['card_bg'],
-    'font_color': COLORS['text_secondary'],
+    'plot_bgcolor': '#FFFFFF',
+    'paper_bgcolor': '#FFFFFF',
+    'font_color': '#1A1F2E',
     'showlegend': False
 }
 
 def apply_chart_layout(fig, height=400, **kwargs):
-    """Apply consistent PagoNxt styling to Plotly charts"""
+    """Apply consistent PagoNxt light theme styling to Plotly charts"""
     layout_config = CHART_LAYOUT_DEFAULTS.copy()
     layout_config['height'] = height
     layout_config.update(kwargs)
@@ -77,29 +77,29 @@ PAGONXT_CSS = """
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
-    /* Root variables - PagoNxt Getnet color palette */
+    /* Root variables - PagoNxt Getnet LIGHT THEME color palette */
     :root {
         --primary-color: #5B2C91;        /* PagoNxt Purple */
         --primary-dark: #3D1C61;         /* Darker Purple */
-        --primary-light: #7B3FB2;        /* Lighter Purple */
+        --primary-light: #9B6FC7;        /* Lighter Purple */
         --secondary-color: #00A3E0;      /* Getnet Blue */
         --accent-color: #00D9FF;         /* Bright Cyan accent */
         --success-color: #00C389;        /* Green for success */
         --warning-color: #FFB020;        /* Orange for warnings */
         --danger-color: #FF3366;         /* Red for danger */
-        --background-dark: #0F1419;      /* Very dark blue-grey background */
-        --background-darker: #0A0E12;    /* Darker background */
-        --card-background: #1A1F2E;      /* Card background */
-        --card-background-hover: #232938; /* Card hover state */
-        --text-primary: #FFFFFF;         /* White text */
-        --text-secondary: #B8C5D0;       /* Light blue-grey text */
-        --text-muted: #7C8896;           /* Muted grey-blue text */
-        --border-color: #2D3748;         /* Border dark blue-grey */
-        --border-color-hover: #4A5568;   /* Border hover */
-        --shadow-sm: 0 1px 3px rgba(91, 44, 145, 0.12);
-        --shadow-md: 0 4px 6px rgba(91, 44, 145, 0.16);
-        --shadow-lg: 0 10px 15px rgba(91, 44, 145, 0.2);
-        --shadow-xl: 0 20px 25px rgba(91, 44, 145, 0.25);
+        --background-light: #FFFFFF;     /* White background */
+        --background-lighter: #F8F9FA;   /* Very light grey */
+        --card-background: #FFFFFF;      /* White cards */
+        --card-background-hover: #F8F9FA; /* Light hover state */
+        --text-primary: #1A1F2E;         /* Dark text */
+        --text-secondary: #4A5568;       /* Grey text */
+        --text-muted: #718096;           /* Muted grey text */
+        --border-color: #E2E8F0;         /* Light border */
+        --border-color-hover: #CBD5E0;   /* Border hover */
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
     }
     
     /* Global styles */
@@ -108,12 +108,17 @@ PAGONXT_CSS = """
     }
     
     .main {
-        background-color: var(--background-dark);
+        background-color: var(--background-lighter);
+    }
+    
+    /* Streamlit specific overrides for light theme */
+    .stApp {
+        background-color: var(--background-lighter);
     }
     
     /* PagoNxt Getnet header with gradient */
     .premium-header {
-        background: linear-gradient(135deg, #5B2C91 0%, #3D1C61 50%, #00A3E0 100%);
+        background: linear-gradient(135deg, #5B2C91 0%, #7B3FB2 50%, #00A3E0 100%);
         padding: 2.5rem 2rem;
         border-radius: 16px;
         margin-bottom: 2rem;
