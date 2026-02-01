@@ -18,6 +18,9 @@ command:
   - --server.enableXsrfProtection=false
   - --browser.gatherUsageStats=false
   - --server.fileWatcherType=none
+  - --server.maxUploadSize=200
+  - --server.maxMessageSize=200
+  - --server.enableWebsocketCompression=false
 
 env:
   # Streamlit Configuration
@@ -100,24 +103,25 @@ env:
   - name: 'ENABLE_GRADIENTS'
     value: 'true'
 
-# Resource Allocation (High Performance for Premium Features)
+# Resource Allocation - Conservative for stability
+# Note: Reduced from 16Gi/8CPU to prevent resource unavailability issues
 resources:
   limits:
-    memory: "16Gi"      # Higher memory for geo-analytics
-    cpu: "8"            # More CPU for complex visualizations
+    memory: "8Gi"       # Sufficient for Streamlit + PyDeck + Plotly
+    cpu: "4"            # Enough for visualization rendering
   requests:
-    memory: "8Gi"       # Initial memory reservation
-    cpu: "4"            # Initial CPU cores
+    memory: "4Gi"       # Initial memory reservation
+    cpu: "2"            # Initial CPU cores
 
-# Health Check Configuration - Very tolerant for stability
+# Health Check Configuration - EXTREMELY tolerant to prevent 502 errors
 healthCheck:
   path: "/_stcore/health"
   port: 8501
-  initialDelaySeconds: 180   # 3 minutes - give plenty of time for dependencies
-  periodSeconds: 30          # Check every 30 seconds (less aggressive)
-  timeoutSeconds: 15         # 15 second timeout for slow responses
+  initialDelaySeconds: 300   # 5 minutes - VERY generous for slow starts
+  periodSeconds: 60          # Check every 60 seconds (very patient)
+  timeoutSeconds: 30         # 30 second timeout (allow slow responses)
   successThreshold: 1
-  failureThreshold: 10       # Very tolerant - 10 failures before restart
+  failureThreshold: 20       # VERY tolerant - 20 failures before restart (20 minutes)
 
 # Application Metadata
 metadata:
