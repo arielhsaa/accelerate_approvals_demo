@@ -25,34 +25,35 @@ st.set_page_config(
 
 
 
-# Premium CSS with enhanced styling
+# Santander Bank themed CSS with enhanced styling
 st.markdown("""
 <style>
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
-    /* Root variables - Premium color palette */
+    /* Root variables - Santander Bank color palette */
     :root {
-        --primary-color: #FF3621;
-        --primary-dark: #CC2B1A;
-        --secondary-color: #00A972;
-        --accent-color: #58A6FF;
-        --success-color: #3FB950;
-        --warning-color: #D29922;
-        --danger-color: #F85149;
-        --background-dark: #0D1117;
-        --background-darker: #010409;
-        --card-background: #161B22;
-        --card-background-hover: #1C2128;
-        --text-primary: #E6EDF3;
-        --text-secondary: #8B949E;
-        --text-muted: #6E7681;
-        --border-color: #30363D;
-        --border-color-hover: #484F58;
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.16);
-        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
-        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.25);
+        --primary-color: #EC0000;        /* Santander Red */
+        --primary-dark: #B80000;         /* Darker Santander Red */
+        --primary-light: #FF4040;        /* Lighter Santander Red */
+        --secondary-color: #666666;      /* Medium Grey */
+        --accent-color: #EC0000;         /* Santander Red accent */
+        --success-color: #00A972;        /* Green for success */
+        --warning-color: #FFA500;        /* Orange for warnings */
+        --danger-color: #EC0000;         /* Santander Red for danger */
+        --background-dark: #1A1A1A;      /* Dark grey background */
+        --background-darker: #0F0F0F;    /* Darker grey */
+        --card-background: #222222;      /* Card background */
+        --card-background-hover: #2A2A2A; /* Card hover state */
+        --text-primary: #FFFFFF;         /* White text */
+        --text-secondary: #CCCCCC;       /* Light grey text */
+        --text-muted: #999999;           /* Muted grey text */
+        --border-color: #444444;         /* Border grey */
+        --border-color-hover: #666666;   /* Border hover */
+        --shadow-sm: 0 1px 3px rgba(236, 0, 0, 0.12);
+        --shadow-md: 0 4px 6px rgba(236, 0, 0, 0.16);
+        --shadow-lg: 0 10px 15px rgba(236, 0, 0, 0.2);
+        --shadow-xl: 0 20px 25px rgba(236, 0, 0, 0.25);
     }
     
     /* Global styles */
@@ -64,15 +65,16 @@ st.markdown("""
         background-color: var(--background-dark);
     }
     
-    /* Premium header with gradient */
+    /* Santander header with gradient */
     .premium-header {
-        background: linear-gradient(135deg, #FF3621 0%, #FF8A00 50%, #FFC837 100%);
+        background: linear-gradient(135deg, #EC0000 0%, #B80000 50%, #8B0000 100%);
         padding: 2.5rem 2rem;
         border-radius: 16px;
         margin-bottom: 2rem;
         box-shadow: var(--shadow-xl);
         position: relative;
         overflow: hidden;
+        border-left: 6px solid #FFFFFF;
     }
     
     .premium-header::before {
@@ -120,10 +122,11 @@ st.markdown("""
         z-index: 1;
     }
     
-    /* Enhanced KPI Cards */
+    /* Enhanced KPI Cards - Santander Style */
     .kpi-card-premium {
         background: linear-gradient(135deg, var(--card-background) 0%, var(--card-background-hover) 100%);
         border: 1px solid var(--border-color);
+        border-left: 4px solid var(--primary-color);
         border-radius: 16px;
         padding: 2rem 1.5rem;
         margin: 0.75rem 0;
@@ -140,8 +143,8 @@ st.markdown("""
         left: 0;
         width: 4px;
         height: 100%;
-        background: linear-gradient(180deg, var(--accent-color) 0%, var(--primary-color) 100%);
-        opacity: 0;
+        background: linear-gradient(180deg, #EC0000 0%, #B80000 100%);
+        opacity: 1;
         transition: opacity 0.3s;
     }
     
@@ -164,7 +167,7 @@ st.markdown("""
     .kpi-value-premium {
         font-size: 3rem;
         font-weight: 800;
-        background: linear-gradient(135deg, var(--accent-color) 0%, var(--secondary-color) 100%);
+        background: linear-gradient(135deg, #EC0000 0%, #FF4040 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
