@@ -1421,7 +1421,7 @@ def show_executive_dashboard(checkout_data, decline_data, retry_data):
 
 
 def show_global_geo_analytics(checkout_data):
-    """Dark futuristic geo-location analytics with 3D globe visualization"""
+    """Dark futuristic geo-location analytics with enhanced visualization"""
     
     # Dark futuristic container
     st.markdown('<div class="dark-map-container">', unsafe_allow_html=True)
@@ -1429,13 +1429,22 @@ def show_global_geo_analytics(checkout_data):
     # Title section
     st.markdown("""
     <div style="position: relative; z-index: 1;">
-        <h1 class="globe-section-title">General Statistics</h1>
-        <p class="globe-section-subtitle">All Users • Global Activity Monitoring</p>
+        <h1 class="globe-section-title">Global Statistics</h1>
+        <p class="globe-section-subtitle">Worldwide Payment Authorization Analytics</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Ensure we have valid geo data
-    if checkout_data.empty or 'latitude' not in checkout_data.columns or 'longitude' not in checkout_data.columns:
+    # Ensure we have valid geo data - comprehensive validation
+    if checkout_data.empty:
+        st.info("🔄 Loading data...")
+        checkout_data = generate_synthetic_data('payments_enriched_stream')
+    
+    # Validate required columns
+    required_cols = ['geography', 'latitude', 'longitude', 'country_code', 'approval_status']
+    missing_cols = [col for col in required_cols if col not in checkout_data.columns]
+    
+    if missing_cols:
+        st.warning(f"⚠️ Missing columns: {', '.join(missing_cols)}. Regenerating data...")
         checkout_data = generate_synthetic_data('payments_enriched_stream')
     
     if checkout_data.empty:
@@ -1443,107 +1452,165 @@ def show_global_geo_analytics(checkout_data):
         st.markdown('</div>', unsafe_allow_html=True)
         return
     
-    # Prepare aggregated data
+    # Backend: Prepare aggregated data with robust error handling
     try:
-        if 'geography' in checkout_data.columns and 'latitude' in checkout_data.columns:
-            geo_data = checkout_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg({
-                'approval_status': [
-                    lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
-                    'count'
-                ],
-                'amount': ['sum', 'mean'] if 'amount' in checkout_data.columns else lambda x: len(x),
-                'risk_score': 'mean' if 'risk_score' in checkout_data.columns else lambda x: 0.5
-            }).reset_index()
-            
-            if 'amount' in checkout_data.columns:
-                geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'total_volume', 'avg_value', 'avg_risk']
-            else:
-                geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'avg_risk']
-                geo_data['total_volume'] = geo_data['txn_count'] * 100
-                geo_data['avg_value'] = 100
-            
-            # Filter countries with minimal transactions (at least 5)
-            geo_data = geo_data[geo_data['txn_count'] >= 5]
-        else:
-            st.error("⚠️ Missing required geo columns")
+        # Clean data - remove nulls
+        clean_data = checkout_data.dropna(subset=['geography', 'latitude', 'longitude', 'country_code'])
+        
+        if clean_data.empty:
+            st.warning("⚠️ No valid geographic data after cleaning")
             st.markdown('</div>', unsafe_allow_html=True)
             return
+        
+        # Aggregate by country
+        agg_dict = {
+            'approval_status': ['count', lambda x: (x == 'approved').sum()],
+        }
+        
+        # Add optional columns if they exist
+        if 'amount' in clean_data.columns:
+            agg_dict['amount'] = ['sum', 'mean']
+        if 'risk_score' in clean_data.columns:
+            agg_dict['risk_score'] = 'mean'
+        
+        geo_aggregated = clean_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg(agg_dict).reset_index()
+        
+        # Flatten column names
+        geo_aggregated.columns = ['country', 'lat', 'lon', 'country_code', 'txn_count', 'approved_count'] + \
+                                 (['total_volume', 'avg_value'] if 'amount' in clean_data.columns else []) + \
+                                 (['avg_risk'] if 'risk_score' in clean_data.columns else [])
+        
+        # Calculate approval rate
+        geo_aggregated['approval_rate'] = (geo_aggregated['approved_count'] / geo_aggregated['txn_count'] * 100).round(2)
+        
+        # Add missing columns with defaults if needed
+        if 'total_volume' not in geo_aggregated.columns:
+            geo_aggregated['total_volume'] = geo_aggregated['txn_count'] * 100
+        if 'avg_value' not in geo_aggregated.columns:
+            geo_aggregated['avg_value'] = 100.0
+        if 'avg_risk' not in geo_aggregated.columns:
+            geo_aggregated['avg_risk'] = 0.5
+        
+        # Filter for data quality - at least 5 transactions
+        geo_data = geo_aggregated[geo_aggregated['txn_count'] >= 5].copy()
+        
+        # Ensure we have data after filtering
+        if geo_data.empty:
+            st.warning("⚠️ Insufficient data after quality filtering")
+            geo_data = geo_aggregated.copy()  # Use all data if filtering removes everything
+        
+        # Sort by transaction count for better visualization
+        geo_data = geo_data.sort_values('txn_count', ascending=False).reset_index(drop=True)
+        
     except Exception as e:
-        st.error(f"⚠️ Error preparing geo data: {str(e)}")
+        st.error(f"⚠️ Backend Error: {str(e)}")
+        import traceback
+        st.code(traceback.format_exc())
         st.markdown('</div>', unsafe_allow_html=True)
         return
     
-    # Layout: Two columns
+    # Frontend: Layout with enhanced stats
     col_left, col_main = st.columns([1, 2])
     
     with col_left:
-        # Total users stat (big number)
+        # Calculate key metrics with safe defaults
         total_transactions = int(geo_data['txn_count'].sum())
+        total_approved = int(geo_data['approved_count'].sum()) if 'approved_count' in geo_data.columns else int(total_transactions * 0.85)
+        overall_approval_rate = (total_approved / total_transactions * 100) if total_transactions > 0 else 0
+        total_volume = float(geo_data['total_volume'].sum())
+        num_countries = len(geo_data)
+        
+        # Total transactions stat
         st.markdown(f"""
         <div class="dark-stat-card">
-            <p class="dark-stat-label">ALL USERS</p>
-            <h1 class="dark-stat-value" style="font-size: 3rem;">{total_transactions:,}</h1>
+            <p class="dark-stat-label">TOTAL TRANSACTIONS</p>
+            <h1 class="dark-stat-value" style="font-size: 2.75rem;">{total_transactions:,}</h1>
+            <p class="dark-stat-delta">
+                <span style="color: #7dd3fc;">→</span> Across {num_countries} countries
+            </p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Current Activity with progress bar
-        approval_rate = geo_data['approval_rate'].mean()
+        # Approval rate with visual progress bar
         st.markdown(f"""
         <div class="dark-stat-card">
-            <p class="dark-stat-label">CURRENT ACTIVITY</p>
+            <p class="dark-stat-label">APPROVAL RATE</p>
+            <h2 class="dark-stat-value" style="font-size: 2.25rem;">{overall_approval_rate:.1f}%</h2>
             <div style="margin-top: 1rem;">
-                <div style="background: rgba(138, 43, 226, 0.3); height: 6px; border-radius: 3px; overflow: hidden;">
-                    <div style="background: linear-gradient(90deg, #da70d6, #ba55d3); width: {approval_rate}%; height: 100%;"></div>
+                <div style="background: rgba(156, 39, 176, 0.3); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(192, 132, 252, 0.3);">
+                    <div style="background: linear-gradient(90deg, #e879f9, #c084fc, #a78bfa); width: {overall_approval_rate}%; height: 100%; box-shadow: 0 0 10px rgba(232, 121, 249, 0.5);"></div>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Top countries list
-        st.markdown('<p class="globe-section-subtitle" style="margin-top: 2rem;">TOP COUNTRIES</p>', unsafe_allow_html=True)
+        # Total volume
+        st.markdown(f"""
+        <div class="dark-stat-card">
+            <p class="dark-stat-label">TOTAL VOLUME</p>
+            <h2 class="dark-stat-value" style="font-size: 2rem;">${total_volume:,.0f}</h2>
+            <p class="dark-stat-delta">
+                <span style="color: #10b981;">▲</span> Global transactions
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        top_countries = geo_data.nlargest(4, 'txn_count')
+        # Top countries list
+        st.markdown('<p class="globe-section-subtitle" style="margin-top: 2rem; margin-bottom: 1rem;">TOP PERFORMING COUNTRIES</p>', unsafe_allow_html=True)
+        
+        top_countries = geo_data.nlargest(5, 'txn_count')
         country_flags = {
             'United States': '🇺🇸', 'USA': '🇺🇸',
-            'France': '🇫🇷',
-            'China': '🇨🇳',
-            'Brazil': '🇧🇷',
-            'United Kingdom': '🇬🇧', 'UK': '🇬🇧',
-            'Germany': '🇩🇪',
-            'Japan': '🇯🇵',
-            'India': '🇮🇳',
-            'Canada': '🇨🇦',
-            'Mexico': '🇲🇽',
-            'Spain': '🇪🇸',
-            'Italy': '🇮🇹'
+            'France': '🇫🇷', 'China': '🇨🇳', 'Brazil': '🇧🇷',
+            'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'Germany': '🇩🇪',
+            'Japan': '🇯🇵', 'India': '🇮🇳', 'Canada': '🇨🇦',
+            'Mexico': '🇲🇽', 'Spain': '🇪🇸', 'Italy': '🇮🇹',
+            'Australia': '🇦🇺', 'Netherlands': '🇳🇱', 'Switzerland': '🇨🇭',
+            'Sweden': '🇸🇪', 'Norway': '🇳🇴', 'Singapore': '🇸🇬'
         }
         
         for idx, row in top_countries.iterrows():
             flag = country_flags.get(row['country'], '🌍')
             percentage = (row['txn_count'] / total_transactions * 100) if total_transactions > 0 else 0
-            trend_class = 'up' if row['approval_rate'] > 85 else 'down'
+            trend_class = 'up' if row['approval_rate'] >= 85 else 'down'
             
             st.markdown(f"""
             <div class="dark-country-item">
                 <div class="dark-country-name">
                     <span class="dark-trend-indicator {trend_class}"></span>
-                    <span>{flag}</span>
+                    <span style="font-size: 1.5rem;">{flag}</span>
                     <span>{row['country']}</span>
                 </div>
-                <div>
-                    <span class="dark-country-value">{int(row['txn_count']):,}</span>
-                    <span class="dark-country-percentage">{percentage:.0f}%</span>
+                <div style="text-align: right;">
+                    <div class="dark-country-value">{int(row['txn_count']):,}</div>
+                    <div class="dark-country-percentage">{percentage:.1f}% • {row['approval_rate']:.1f}% approved</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
     
     with col_main:
-        # Globe visualization area with wrapper
+        # Frontend: Enhanced map visualization with wrapper
         st.markdown('<div class="map-visualization-wrapper" style="position: relative; z-index: 1;">', unsafe_allow_html=True)
         
-        # Enhanced map visualization with Plotly
-        if not geo_data.empty:
+        # Add map title and info
+        st.markdown("""
+        <div style="margin-bottom: 1rem; position: relative; z-index: 1;">
+            <h3 style="color: rgba(232, 121, 249, 0.9); font-size: 1.25rem; margin: 0 0 0.5rem 0;">
+                🗺️ Global Distribution Map
+            </h3>
+            <p style="color: rgba(192, 132, 252, 0.7); font-size: 0.875rem; margin: 0;">
+                Color intensity represents approval rate • Hover for details
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Map visualization with robust error handling
+        if not geo_data.empty and len(geo_data) > 0:
             try:
+                # Validate we have the required columns
+                if 'country_code' not in geo_data.columns or 'approval_rate' not in geo_data.columns:
+                    raise ValueError("Missing required columns for map")
+                
                 # Create stunning choropleth map
                 fig = px.choropleth(
                     geo_data,
@@ -1559,41 +1626,44 @@ def show_global_geo_analytics(checkout_data):
                         'avg_risk': ':.2f'
                     },
                     color_continuous_scale=[
-                        [0.0, '#4c1d95'],    # Deep purple
-                        [0.2, '#6b21a8'],    # Purple 800
-                        [0.4, '#7c3aed'],    # Violet 600
-                        [0.6, '#a78bfa'],    # Violet 400
-                        [0.8, '#c4b5fd'],    # Violet 300
-                        [1.0, '#e9d5ff']     # Violet 200
+                        [0.0, '#4c1d95'],    # Deep purple (0-20%)
+                        [0.2, '#6b21a8'],    # Purple 800 (20-40%)
+                        [0.4, '#7c3aed'],    # Violet 600 (40-60%)
+                        [0.6, '#a78bfa'],    # Violet 400 (60-80%)
+                        [0.8, '#c4b5fd'],    # Violet 300 (80-90%)
+                        [1.0, '#e9d5ff']     # Violet 200 (90-100%)
                     ],
                     labels={
                         'approval_rate': 'Approval Rate (%)',
                         'txn_count': 'Transactions',
-                        'total_volume': 'Volume',
-                        'avg_risk': 'Risk Score'
-                    }
+                        'total_volume': 'Volume ($)',
+                        'avg_risk': 'Avg Risk Score'
+                    },
+                    range_color=[0, 100]
                 )
                 
-                # Enhanced styling for dark theme
+                # Enhanced dark theme styling
                 fig.update_layout(
-                    height=650,
-                    margin=dict(l=0, r=0, t=0, b=0),
+                    height=550,
+                    margin=dict(l=0, r=0, t=10, b=0),
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
                     geo=dict(
                         bgcolor='rgba(0,0,0,0)',
-                        lakecolor='rgba(20, 15, 35, 0.8)',
-                        landcolor='rgba(30, 25, 45, 0.6)',
-                        oceancolor='rgba(15, 10, 30, 0.8)',
+                        lakecolor='rgba(20, 15, 35, 0.9)',
+                        landcolor='rgba(30, 25, 45, 0.7)',
+                        oceancolor='rgba(15, 10, 30, 0.9)',
                         showcountries=True,
-                        countrycolor='rgba(156, 39, 176, 0.3)',
+                        countrycolor='rgba(156, 39, 176, 0.4)',
+                        countrywidth=0.5,
                         showcoastlines=True,
-                        coastlinecolor='rgba(192, 132, 252, 0.4)',
+                        coastlinecolor='rgba(192, 132, 252, 0.5)',
+                        coastlinewidth=1,
                         showland=True,
                         showlakes=True,
                         showocean=True,
                         projection=dict(
-                            type='natural earth',  # Beautiful curved projection
+                            type='natural earth',
                             rotation=dict(lon=0, lat=0, roll=0)
                         ),
                         center=dict(lat=20, lon=0),
@@ -1607,158 +1677,193 @@ def show_global_geo_analytics(checkout_data):
                     coloraxis=dict(
                         colorbar=dict(
                             title=dict(
-                                text="Approval Rate (%)",
-                                font=dict(color='rgba(232, 121, 249, 0.9)', size=12, family='Inter')
+                                text="Approval<br>Rate (%)",
+                                font=dict(
+                                    color='rgba(232, 121, 249, 0.95)',
+                                    size=11,
+                                    family='Inter'
+                                ),
+                                side='right'
                             ),
-                            bgcolor='rgba(30, 20, 50, 0.8)',
-                            bordercolor='rgba(156, 39, 176, 0.5)',
-                            borderwidth=1,
+                            bgcolor='rgba(30, 20, 50, 0.9)',
+                            bordercolor='rgba(192, 132, 252, 0.6)',
+                            borderwidth=1.5,
                             tickmode='linear',
                             tick0=0,
                             dtick=20,
-                            tickfont=dict(color='rgba(192, 132, 252, 0.8)', size=10),
-                            tickcolor='rgba(156, 39, 176, 0.5)',
+                            tickfont=dict(
+                                color='rgba(192, 132, 252, 0.9)',
+                                size=10
+                            ),
+                            tickcolor='rgba(192, 132, 252, 0.6)',
+                            tickwidth=1,
                             thicknessmode='pixels',
-                            thickness=15,
+                            thickness=18,
                             lenmode='pixels',
-                            len=250,
-                            x=1.02,
-                            xpad=10
+                            len=280,
+                            x=1.01,
+                            xpad=5,
+                            outlinewidth=0
                         ),
                         cmin=0,
                         cmax=100
                     ),
                     hoverlabel=dict(
-                        bgcolor='rgba(30, 20, 50, 0.95)',
-                        bordercolor='rgba(192, 132, 252, 0.6)',
+                        bgcolor='rgba(30, 20, 50, 0.98)',
+                        bordercolor='rgba(232, 121, 249, 0.7)',
                         font=dict(
                             family='Inter, sans-serif',
                             size=13,
                             color='white'
-                        )
+                        ),
+                        align='left'
                     )
                 )
                 
-                # Add subtle animation
+                # Add country borders
                 fig.update_traces(
                     marker=dict(
                         line=dict(
-                            color='rgba(232, 121, 249, 0.4)',
-                            width=0.5
+                            color='rgba(232, 121, 249, 0.5)',
+                            width=0.8
                         )
                     )
                 )
                 
                 st.plotly_chart(fig, use_container_width=True, config={
                     'displayModeBar': False,
-                    'scrollZoom': False
+                    'scrollZoom': False,
+                    'doubleClick': False
                 })
                 
             except Exception as e:
-                # Enhanced fallback with scatter geo
-                st.info("💫 Using enhanced bubble map visualization")
+                # Fallback: Enhanced scatter geo visualization
+                st.info(f"💫 Using scatter map visualization")
                 
-                # Normalize for better bubble sizes
-                max_txn = geo_data['txn_count'].max()
-                geo_data['bubble_size'] = (geo_data['txn_count'] / max_txn * 50).clip(5, 50)
-                
-                fig = px.scatter_geo(
-                    geo_data,
-                    lat='lat',
-                    lon='lon',
-                    size='bubble_size',
-                    color='approval_rate',
-                    hover_name='country',
-                    hover_data={
-                        'lat': False,
-                        'lon': False,
-                        'bubble_size': False,
-                        'txn_count': ':,',
-                        'approval_rate': ':.1f%',
-                        'total_volume': ':$,.0f'
-                    },
-                    color_continuous_scale=[
-                        [0.0, '#4c1d95'],
-                        [0.25, '#6b21a8'],
-                        [0.5, '#7c3aed'],
-                        [0.75, '#a78bfa'],
-                        [1.0, '#e9d5ff']
-                    ],
-                    size_max=50,
-                    projection='natural earth'
-                )
-                
-                fig.update_layout(
-                    height=650,
-                    margin=dict(l=0, r=0, t=0, b=0),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    geo=dict(
-                        bgcolor='rgba(0,0,0,0)',
-                        lakecolor='rgba(20, 15, 35, 0.8)',
-                        landcolor='rgba(30, 25, 45, 0.6)',
-                        oceancolor='rgba(15, 10, 30, 0.8)',
-                        showcountries=True,
-                        countrycolor='rgba(156, 39, 176, 0.3)',
-                        showcoastlines=True,
-                        coastlinecolor='rgba(192, 132, 252, 0.4)',
-                        projection_type='natural earth'
-                    ),
-                    font=dict(color='white', family='Inter'),
-                    coloraxis_colorbar=dict(
-                        title="Approval %",
-                        bgcolor='rgba(30, 20, 50, 0.8)',
-                        bordercolor='rgba(156, 39, 176, 0.5)',
-                        tickcolor='rgba(192, 132, 252, 0.8)',
-                        tickfont=dict(color='rgba(192, 132, 252, 0.8)')
+                try:
+                    # Normalize for better bubble sizes
+                    max_txn = geo_data['txn_count'].max()
+                    min_txn = geo_data['txn_count'].min()
+                    geo_data['bubble_size'] = ((geo_data['txn_count'] - min_txn) / (max_txn - min_txn) * 45 + 5).clip(5, 50)
+                    
+                    fig = px.scatter_geo(
+                        geo_data,
+                        lat='lat',
+                        lon='lon',
+                        size='bubble_size',
+                        color='approval_rate',
+                        hover_name='country',
+                        hover_data={
+                            'lat': False,
+                            'lon': False,
+                            'bubble_size': False,
+                            'txn_count': ':,',
+                            'approval_rate': ':.1f',
+                            'total_volume': ':$,.0f'
+                        },
+                        color_continuous_scale=[
+                            [0.0, '#4c1d95'],
+                            [0.25, '#6b21a8'],
+                            [0.5, '#7c3aed'],
+                            [0.75, '#a78bfa'],
+                            [1.0, '#e9d5ff']
+                        ],
+                        size_max=50,
+                        projection='natural earth',
+                        range_color=[0, 100]
                     )
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, config={
-                    'displayModeBar': False
-                })
+                    
+                    fig.update_layout(
+                        height=550,
+                        margin=dict(l=0, r=0, t=10, b=0),
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        geo=dict(
+                            bgcolor='rgba(0,0,0,0)',
+                            lakecolor='rgba(20, 15, 35, 0.9)',
+                            landcolor='rgba(30, 25, 45, 0.7)',
+                            oceancolor='rgba(15, 10, 30, 0.9)',
+                            showcountries=True,
+                            countrycolor='rgba(156, 39, 176, 0.4)',
+                            showcoastlines=True,
+                            coastlinecolor='rgba(192, 132, 252, 0.5)',
+                            projection_type='natural earth'
+                        ),
+                        font=dict(color='white', family='Inter'),
+                        coloraxis_colorbar=dict(
+                            title="Approval %",
+                            bgcolor='rgba(30, 20, 50, 0.9)',
+                            bordercolor='rgba(192, 132, 252, 0.6)',
+                            tickcolor='rgba(192, 132, 252, 0.9)',
+                            tickfont=dict(color='rgba(192, 132, 252, 0.9)')
+                        ),
+                        hoverlabel=dict(
+                            bgcolor='rgba(30, 20, 50, 0.98)',
+                            bordercolor='rgba(232, 121, 249, 0.7)',
+                            font=dict(color='white', size=13)
+                        )
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True, config={
+                        'displayModeBar': False
+                    })
+                    
+                except Exception as fallback_error:
+                    st.error(f"⚠️ Map rendering error: {str(fallback_error)}")
+                    st.info("📊 Showing data table instead:")
+                    st.dataframe(
+                        geo_data[['country', 'txn_count', 'approval_rate', 'total_volume']].head(10),
+                        use_container_width=True
+                    )
+        else:
+            st.warning("⚠️ No geographic data available to display")
         
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Bottom stats row
+        # Frontend: Bottom statistics row with enhanced metrics
+        st.markdown('<div style="margin-top: 2rem; position: relative; z-index: 1;">', unsafe_allow_html=True)
+        
         col_a, col_b, col_c = st.columns(3)
         
         with col_a:
-            total_volume = geo_data['total_volume'].sum()
+            avg_txn_value = geo_data['avg_value'].mean() if 'avg_value' in geo_data.columns else 100
             st.markdown(f"""
             <div class="dark-stat-card">
-                <p class="dark-stat-label">TOTAL EARNING</p>
-                <p class="dark-stat-value" style="font-size: 1.75rem;">${total_volume:,.0f}</p>
+                <p class="dark-stat-label">AVG TRANSACTION VALUE</p>
+                <p class="dark-stat-value" style="font-size: 1.75rem;">${avg_txn_value:,.2f}</p>
                 <p class="dark-stat-delta">
-                    <span style="color: #10b981;">▲</span> 10%
+                    <span style="color: #10b981;">▲</span> Per transaction
                 </p>
             </div>
             """, unsafe_allow_html=True)
         
         with col_b:
-            avg_approval = geo_data['approval_rate'].mean()
+            avg_risk = geo_data['avg_risk'].mean() if 'avg_risk' in geo_data.columns else 0.5
+            risk_percentage = avg_risk * 100
             st.markdown(f"""
             <div class="dark-stat-card">
-                <p class="dark-stat-label">TREND</p>
-                <p class="dark-stat-value" style="font-size: 1.75rem;">{avg_approval:.0f}%</p>
+                <p class="dark-stat-label">AVG RISK SCORE</p>
+                <p class="dark-stat-value" style="font-size: 1.75rem;">{risk_percentage:.1f}%</p>
                 <p class="dark-stat-delta">
-                    <span style="color: #7dd3fc;">→</span> Compared to 12M last year
+                    <span style="color: #7dd3fc;">→</span> Global average
                 </p>
             </div>
             """, unsafe_allow_html=True)
         
         with col_c:
-            total_coverage = len(geo_data)
             st.markdown(f"""
             <div class="dark-stat-card">
-                <p class="dark-stat-label">TOTAL COVERAGE</p>
-                <p class="dark-stat-value" style="font-size: 1.75rem;">{total_coverage}</p>
+                <p class="dark-stat-label">COUNTRIES ACTIVE</p>
+                <p class="dark-stat-value" style="font-size: 1.75rem;">{num_countries}</p>
                 <p class="dark-stat-delta">
-                    <span style="color: #7dd3fc;">→</span> Countries
+                    <span style="color: #7dd3fc;">→</span> Global coverage
                 </p>
             </div>
             """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
+    # Close dark container
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("---")
