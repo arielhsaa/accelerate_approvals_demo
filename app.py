@@ -1066,16 +1066,24 @@ def main():
     # Apply PagoNxt Getnet CSS theme
     st.markdown(PAGONXT_CSS, unsafe_allow_html=True)
     
-    # Apply Streamlit light theme overrides
+    # Apply Streamlit light theme overrides with light blue sidebar
     st.markdown("""
     <style>
         /* Force light theme for Streamlit components */
         [data-testid="stAppViewContainer"] {
             background-color: #F8F9FA !important;
         }
+        /* Light blue gradient sidebar */
         [data-testid="stSidebar"] {
-            background-color: #FFFFFF !important;
-            border-right: 1px solid #E2E8F0 !important;
+            background: linear-gradient(180deg, #E0F2FE 0%, #BAE6FD 100%) !important;
+            border-right: 1px solid #7DD3FC !important;
+        }
+        /* Navigation area with subtle background */
+        [data-testid="stSidebar"] [data-testid="stSidebarNav"] {
+            background-color: rgba(224, 242, 254, 0.6) !important;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 0.5rem;
         }
         [data-testid="stHeader"] {
             background-color: #FFFFFF !important;
