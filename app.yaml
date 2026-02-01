@@ -7,16 +7,20 @@
 # Purpose: Enterprise-grade app with advanced geo-analytics and premium UI/UX
 # ============================================================================
 
-command: 
-  - 'streamlit'
-  - 'run'
-  - 'app.py'
-  - '--server.port=8501'
-  - '--server.address=0.0.0.0'
-  - '--server.headless=true'
-  - '--server.enableCORS=false'
-  - '--server.enableXsrfProtection=false'
-  - '--browser.gatherUsageStats=false'
+command:
+  - streamlit
+  - run
+  - app.py
+  - --server.port=8501
+  - --server.address=0.0.0.0
+  - --server.headless=true
+  - --server.enableCORS=false
+  - --server.enableXsrfProtection=false
+  - --browser.gatherUsageStats=false
+  - --server.fileWatcherType=none
+  - --server.maxUploadSize=200
+  - --server.maxMessageSize=200
+  - --server.enableWebsocketCompression=false
 
 env:
   # Streamlit Configuration
@@ -99,34 +103,35 @@ env:
   - name: 'ENABLE_GRADIENTS'
     value: 'true'
 
-# Resource Allocation (High Performance for Premium Features)
+# Resource Allocation - Optimized for stability
+# Note: Reduced from 16Gi/8CPU to prevent resource unavailability issues
 resources:
   limits:
-    memory: "16Gi"      # Higher memory for geo-analytics
-    cpu: "8"            # More CPU for complex visualizations
+    memory: "8Gi"       # Sufficient for Streamlit + PyDeck + Plotly
+    cpu: "4"            # Enough for visualization rendering
   requests:
-    memory: "8Gi"       # Initial memory reservation
-    cpu: "4"            # Initial CPU cores
+    memory: "4Gi"       # Initial memory reservation
+    cpu: "2"            # Initial CPU cores
 
-# Health Check Configuration
+# Health Check Configuration - EXTREMELY tolerant to prevent 502 errors
 healthCheck:
   path: "/_stcore/health"
   port: 8501
-  initialDelaySeconds: 120   # Increased to 2 minutes for slower startups
-  periodSeconds: 15          # Check every 15 seconds
-  timeoutSeconds: 10         # Longer timeout for health check
+  initialDelaySeconds: 300   # 5 minutes - VERY generous for slow starts
+  periodSeconds: 60          # Check every 60 seconds (very patient)
+  timeoutSeconds: 30         # 30 second timeout (allow slow responses)
   successThreshold: 1
-  failureThreshold: 5        # More tolerance for failures
+  failureThreshold: 20       # VERY tolerant - 20 failures before restart (20 minutes)
 
 # Application Metadata
 metadata:
-  name: "payment-authorization-premium"
-  displayName: "Payment Authorization Premium - Enterprise Edition"
+  name: "pagonxt-getnet-rates"
+  displayName: "PagoNxt Getnet - Payment Authorization Platform"
   description: |
-    Enterprise-grade payment authorization analytics platform with advanced geo-analytics.
+    PagoNxt Getnet payment authorization analytics platform with advanced geo-analytics.
     
     Premium Features:
-    - Executive Dashboard: Premium KPI cards with gradients and animations
+    - Executive Dashboard: Premium KPI cards with PagoNxt Getnet brand colors
     - Global Geo-Analytics: Interactive 3D bubble maps (PyDeck) and choropleth maps
     - Country Drill-Down: Detailed analysis for 18+ countries with lat/lon mapping
     - Smart Checkout: Advanced solution optimization with cascading logic
@@ -136,8 +141,9 @@ metadata:
     - Genie AI Assistant: Natural language query interface
     - Settings & Config: Policy management and customization
     
-    Premium UI/UX:
-    - Modern dark theme with premium styling
+    PagoNxt Getnet Branded UI/UX:
+    - Purple/Blue gradient theme (#5B2C91 → #00A3E0)
+    - Modern fintech design with premium styling
     - 500+ lines of custom CSS
     - Smooth animations and transitions
     - Glass-morphism effects
@@ -147,8 +153,8 @@ metadata:
     Perfect for: Executive presentations, production use, enterprise deployments
     
     Built with: Streamlit, Plotly, PyDeck, PySpark, Delta Lake, MLflow, Databricks SQL
-  version: "3.0.0-premium"
-  author: "Databricks Solutions Team"
+  version: "3.0.0-pagonxt"
+  author: "PagoNxt Getnet + Databricks"
   license: "Databricks License"
   homepage: "https://github.com/databricks/payment-authorization-demo"
   
