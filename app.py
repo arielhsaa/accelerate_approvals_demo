@@ -125,9 +125,11 @@ PAGONXT_CSS = """
         background-color: var(--background-grey);
     }
     
-    /* Professional Header - Clean and Corporate with GREEN */
+    /* Professional Header with Animated Background */
     .premium-header {
-        background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-dark) 100%);
+        background: linear-gradient(-45deg, #00B67A, #009963, #0099D8, #00C7E6);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
         padding: 3rem 2.5rem;
         border-radius: 12px;
         margin-bottom: 2.5rem;
@@ -136,15 +138,53 @@ PAGONXT_CSS = """
         overflow: hidden;
     }
     
+    @keyframes gradientShift {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+    
     .premium-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(255, 255, 255, 0.03) 10px,
+            rgba(255, 255, 255, 0.03) 20px
+        );
+        animation: slidePattern 20s linear infinite;
+    }
+    
+    @keyframes slidePattern {
+        0% {
+            transform: translate(0, 0);
+        }
+        100% {
+            transform: translate(50px, 50px);
+        }
+    }
+    
+    .premium-header::after {
         content: '';
         position: absolute;
         top: 0;
         right: 0;
         width: 50%;
         height: 100%;
-        background: linear-gradient(90deg, transparent 0%, var(--secondary-blue) 100%);
-        opacity: 0.15;
+        background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+        pointer-events: none;
     }
     
     /* Brand Title Container */
