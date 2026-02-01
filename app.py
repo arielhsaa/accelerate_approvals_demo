@@ -77,14 +77,14 @@ PAGONXT_CSS = """
     /* Import Professional Fonts - Inter for body, Space Grotesk for headings */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
     
-    /* Root variables - Professional PagoNxt Getnet color palette */
+    /* Root variables - Professional PagoNxt Getnet color palette with GREEN accent */
     :root {
-        --primary-purple: #6B2C91;       /* PagoNxt Professional Purple */
-        --primary-dark: #4A1F6B;         /* Deeper Purple */
-        --primary-light: #8B4FAF;        /* Lighter Purple */
+        --primary-green: #00B67A;        /* Primary Green (replacing purple) */
+        --primary-dark: #009963;         /* Darker Green */
+        --primary-light: #00D68F;        /* Lighter Green */
         --secondary-blue: #0099D8;       /* Getnet Professional Blue */
         --accent-cyan: #00C7E6;          /* Accent Cyan */
-        --success-color: #00B67A;        /* Professional Green */
+        --success-color: #00B67A;        /* Success Green */
         --warning-color: #FFA726;        /* Professional Orange */
         --danger-color: #EF4444;         /* Professional Red */
         --background-light: #FFFFFF;     /* Pure White */
@@ -125,9 +125,9 @@ PAGONXT_CSS = """
         background-color: var(--background-grey);
     }
     
-    /* Professional Header - Clean and Corporate */
+    /* Professional Header - Clean and Corporate with GREEN */
     .premium-header {
-        background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-dark) 100%);
+        background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-dark) 100%);
         padding: 3rem 2.5rem;
         border-radius: 12px;
         margin-bottom: 2.5rem;
@@ -765,9 +765,9 @@ def main():
         .stMarkdown, p, span, div {
             color: #1A1F2E !important;
         }
-        /* Metric styling */
+        /* Metric styling - GREEN accent */
         [data-testid="stMetricValue"] {
-            color: #5B2C91 !important;
+            color: #00B67A !important;
         }
         [data-testid="stMetricLabel"] {
             color: #4A5568 !important;
@@ -780,13 +780,15 @@ def main():
         .stSelectbox, .stMultiSelect, .stSlider, .stTextInput {
             background-color: #FFFFFF !important;
         }
-        /* Buttons */
+        /* Buttons - GREEN primary color */
         .stButton button {
-            background-color: #5B2C91 !important;
+            background-color: #00B67A !important;
             color: #FFFFFF !important;
+            border: none !important;
+            font-weight: 500 !important;
         }
         .stButton button:hover {
-            background-color: #3D1C61 !important;
+            background-color: #009963 !important;
         }
     </style>
     """, unsafe_allow_html=True)
