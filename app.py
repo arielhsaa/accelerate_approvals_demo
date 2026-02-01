@@ -9,24 +9,8 @@ from streamlit_option_menu import option_menu
 import json
 import pydeck as pdk
 
-# Set page config - MUST BE FIRST STREAMLIT COMMAND
-st.set_page_config(
-    page_title="Payment Authorization Command Center",
-    page_icon="💳",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://docs.databricks.com',
-        'Report a bug': None,
-        'About': "Payment Authorization Command Center v2.0 - Powered by Databricks"
-    }
-)
-
-
-
-
-# Santander Bank themed CSS with enhanced styling
-st.markdown("""
+# CSS STYLES - Define as constant, apply in main()
+SANTANDER_CSS = """
 <style>
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -451,31 +435,42 @@ st.markdown("""
         .section-header-premium {
             font-size: 1.5rem;
         }
-    }
 </style>
-""", unsafe_allow_html=True)
+"""
+
+# ============================================================================
+# CONFIGURATION & SETUP
+# ============================================================================
 
 
 
 
 @st.cache_data(ttl=300)  # Cache for 5 minutes
 def load_data_from_delta(table_name, limit=10000):
-    """Load data from Delta table with caching"""
+    """Load data from Delta table with caching and robust error handling"""
     try:
         # Try to connect to Databricks
         from pyspark.sql import SparkSession
-        from databricks import sql
-        import os
         
         # Try to get existing Spark session (in Databricks environment)
-        spark = SparkSession.builder.getOrCreate()
+        # Use getOrCreate() which won't fail if session doesn't exist
+        spark = SparkSession.builder \
+            .appName("PaymentAuthorizationApp") \
+            .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
+            .getOrCreate()
         
         query = f"SELECT * FROM {table_name} LIMIT {limit}"
         df = spark.sql(query).toPandas()
         return df
+    except ImportError as e:
+        # PySpark not available (shouldn't happen in Databricks)
+        print(f"⚠️  PySpark import error: {e}")
+        return generate_synthetic_data(table_name)
     except Exception as e:
         # Fallback to synthetic data for demo/local testing
-        st.warning(f"Using synthetic data for demonstration. Connection to database not available.")
+        # Don't show warning every time (annoying for users)
+        # st.warning(f"Using synthetic data for demonstration.")
+        print(f"ℹ️  Using synthetic data for {table_name}: {e}")
         return generate_synthetic_data(table_name)
 
 @st.cache_data(ttl=60)  # Cache for 1 minute for real-time feel
@@ -603,6 +598,22 @@ def show_premium_header():
 
 def main():
     """Main application with enhanced navigation"""
+    
+    # Set page config - MUST BE FIRST STREAMLIT COMMAND
+    st.set_page_config(
+        page_title="Payment Authorization Command Center",
+        page_icon="💳",
+        layout="wide",
+        initial_sidebar_state="expanded",
+        menu_items={
+            'Get Help': 'https://docs.databricks.com',
+            'Report a bug': None,
+            'About': "Payment Authorization Command Center v3.0 - Powered by Databricks"
+        }
+    )
+    
+    # Apply Santander Bank CSS theme
+    st.markdown(SANTANDER_CSS, unsafe_allow_html=True)
     
     # Show premium header
     show_premium_header()
