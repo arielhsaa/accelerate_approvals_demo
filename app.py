@@ -454,15 +454,23 @@ PAGONXT_CSS = """
         font-size: 1rem;
     }
     
-    /* Dark Futuristic Map Page */
+    /* Dark Futuristic Map Page - Enhanced */
     .dark-map-container {
-        background: linear-gradient(135deg, #0f0a1e 0%, #1a0d2e 50%, #0f0a1e 100%);
-        padding: 2rem;
+        background: 
+            linear-gradient(135deg, rgba(15, 10, 30, 0.95) 0%, rgba(26, 13, 46, 0.95) 50%, rgba(15, 10, 30, 0.95) 100%),
+            radial-gradient(circle at 30% 40%, rgba(123, 31, 162, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 70% 60%, rgba(91, 44, 145, 0.2) 0%, transparent 50%),
+            linear-gradient(180deg, #0a0515 0%, #1a0d2e 100%);
+        padding: 2.5rem;
         border-radius: var(--radius-lg);
-        min-height: 800px;
+        min-height: 900px;
         position: relative;
         overflow: hidden;
         margin: 2rem 0;
+        border: 1px solid rgba(123, 31, 162, 0.2);
+        box-shadow: 
+            0 0 60px rgba(123, 31, 162, 0.15),
+            inset 0 0 60px rgba(123, 31, 162, 0.05);
     }
     
     .dark-map-container::before {
@@ -473,36 +481,100 @@ PAGONXT_CSS = """
         right: 0;
         bottom: 0;
         background: 
-            radial-gradient(circle at 20% 50%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 80% 50%, rgba(75, 0, 130, 0.15) 0%, transparent 50%);
+            radial-gradient(circle at 20% 50%, rgba(138, 43, 226, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 80% 50%, rgba(156, 39, 176, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 50% 20%, rgba(103, 58, 183, 0.15) 0%, transparent 40%);
+        pointer-events: none;
+        animation: pulseGlow 8s ease-in-out infinite;
+    }
+    
+    @keyframes pulseGlow {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
+    
+    .dark-map-container::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 20px,
+            rgba(123, 31, 162, 0.03) 20px,
+            rgba(123, 31, 162, 0.03) 40px
+        );
+        animation: patternShift 30s linear infinite;
         pointer-events: none;
     }
     
+    @keyframes patternShift {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(40px, 40px); }
+    }
+    
     .dark-stat-card {
-        background: rgba(30, 20, 50, 0.6);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(138, 43, 226, 0.3);
-        border-radius: 16px;
-        padding: 1.5rem;
+        background: 
+            linear-gradient(135deg, rgba(30, 20, 50, 0.8) 0%, rgba(40, 25, 60, 0.6) 100%);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(156, 39, 176, 0.4);
+        border-radius: 18px;
+        padding: 1.75rem;
         margin: 1rem 0;
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         z-index: 1;
+        box-shadow: 
+            0 4px 20px rgba(123, 31, 162, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    
+    .dark-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, transparent 100%);
+        border-radius: 18px;
+        opacity: 0;
+        transition: opacity 0.4s ease;
     }
     
     .dark-stat-card:hover {
-        border-color: rgba(186, 85, 211, 0.6);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 32px rgba(138, 43, 226, 0.3);
+        border-color: rgba(186, 85, 211, 0.8);
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 
+            0 12px 40px rgba(138, 43, 226, 0.4),
+            0 0 0 1px rgba(186, 85, 211, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .dark-stat-card:hover::before {
+        opacity: 1;
     }
     
     .dark-stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #da70d6 0%, #ba55d3 100%);
+        font-size: 2.75rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #e879f9 0%, #c084fc 50%, #a78bfa 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin: 0.5rem 0;
+        line-height: 1.2;
+        text-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        animation: shimmer 3s ease-in-out infinite;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.2); }
     }
     
     .dark-stat-label {
@@ -523,22 +595,44 @@ PAGONXT_CSS = """
     }
     
     .dark-country-item {
-        background: rgba(30, 20, 50, 0.4);
-        border: 1px solid rgba(138, 43, 226, 0.2);
-        border-radius: 12px;
-        padding: 1rem;
+        background: linear-gradient(90deg, rgba(30, 20, 50, 0.5) 0%, rgba(40, 25, 60, 0.3) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(156, 39, 176, 0.3);
+        border-radius: 14px;
+        padding: 1.1rem 1.25rem;
         margin: 0.5rem 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         z-index: 1;
+        overflow: hidden;
+    }
+    
+    .dark-country-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 3px;
+        background: linear-gradient(180deg, #e879f9 0%, #c084fc 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
     
     .dark-country-item:hover {
-        background: rgba(40, 30, 60, 0.6);
-        border-color: rgba(186, 85, 211, 0.4);
+        background: linear-gradient(90deg, rgba(40, 30, 60, 0.7) 0%, rgba(50, 35, 70, 0.5) 100%);
+        border-color: rgba(192, 132, 252, 0.6);
+        transform: translateX(4px);
+        box-shadow: 
+            0 4px 20px rgba(156, 39, 176, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    
+    .dark-country-item:hover::before {
+        opacity: 1;
     }
     
     .dark-country-name {
@@ -550,9 +644,12 @@ PAGONXT_CSS = """
     }
     
     .dark-country-value {
-        color: #da70d6;
+        background: linear-gradient(135deg, #e879f9 0%, #c084fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         font-weight: 700;
-        font-size: 1.1rem;
+        font-size: 1.15rem;
     }
     
     .dark-country-percentage {
@@ -570,33 +667,76 @@ PAGONXT_CSS = """
     }
     
     .dark-trend-indicator.up {
-        background: #10b981;
-        box-shadow: 0 0 10px #10b981;
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        box-shadow: 
+            0 0 12px rgba(16, 185, 129, 0.6),
+            0 0 20px rgba(16, 185, 129, 0.3);
+        animation: pulse-green 2s ease-in-out infinite;
     }
     
     .dark-trend-indicator.down {
-        background: #ef4444;
-        box-shadow: 0 0 10px #ef4444;
+        background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        box-shadow: 
+            0 0 12px rgba(239, 68, 68, 0.6),
+            0 0 20px rgba(239, 68, 68, 0.3);
+        animation: pulse-red 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-green {
+        0%, 100% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), 0 0 20px rgba(16, 185, 129, 0.3); }
+        50% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.8), 0 0 25px rgba(16, 185, 129, 0.5); }
+    }
+    
+    @keyframes pulse-red {
+        0%, 100% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.6), 0 0 20px rgba(239, 68, 68, 0.3); }
+        50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.8), 0 0 25px rgba(239, 68, 68, 0.5); }
     }
     
     .globe-section-title {
-        color: white;
-        font-size: 1.75rem;
-        font-weight: 700;
+        background: linear-gradient(135deg, #ffffff 0%, #e879f9 50%, #c084fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 2rem;
+        font-weight: 800;
         margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 0 30px rgba(232, 121, 249, 0.5);
+    }
+    
+    .globe-section-subtitle {
+        color: rgba(192, 132, 252, 0.8);
+        font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 2px;
         position: relative;
         z-index: 1;
+        font-weight: 500;
     }
     
-    .globe-section-subtitle {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    /* Enhanced map container */
+    .map-visualization-wrapper {
+        background: rgba(20, 15, 35, 0.4);
+        border: 1px solid rgba(156, 39, 176, 0.3);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
         position: relative;
-        z-index: 1;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+    
+    .map-visualization-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(232, 121, 249, 0.5) 50%, transparent 100%);
     }
     
     /* Filters and controls */
@@ -1395,115 +1535,185 @@ def show_global_geo_analytics(checkout_data):
             """, unsafe_allow_html=True)
     
     with col_main:
-        # Globe visualization area
-        st.markdown('<div style="position: relative; z-index: 1; margin-top: 2rem;">', unsafe_allow_html=True)
+        # Globe visualization area with wrapper
+        st.markdown('<div class="map-visualization-wrapper" style="position: relative; z-index: 1;">', unsafe_allow_html=True)
         
-        # Try PyDeck first for 3D globe effect
+        # Enhanced map visualization with Plotly
         if not geo_data.empty:
             try:
-                # Normalize values for bubble size
-                geo_data['size'] = (geo_data['txn_count'] / geo_data['txn_count'].max() * 1000000).fillna(0)
-                
-                # Purple/blue color scheme for dark theme
-                def get_dark_color(approval_rate):
-                    if approval_rate >= 90:
-                        return [218, 112, 214, 200]  # Orchid
-                    elif approval_rate >= 80:
-                        return [186, 85, 211, 200]  # Medium Orchid
-                    else:
-                        return [147, 51, 234, 200]  # Purple
-                
-                geo_data['color'] = geo_data['approval_rate'].apply(get_dark_color)
-                
-                # Create PyDeck layer with dark style
-                layer = pdk.Layer(
-                    "ScatterplotLayer",
-                    data=geo_data,
-                    get_position=['lon', 'lat'],
-                    get_radius='size',
-                    get_fill_color='color',
-                    pickable=True,
-                    opacity=0.8,
-                    stroked=True,
-                    filled=True,
-                    radius_scale=1,
-                    radius_min_pixels=3,
-                    radius_max_pixels=60,
-                    line_width_min_pixels=1,
-                    get_line_color=[255, 255, 255, 100]
-                )
-                
-                view_state = pdk.ViewState(
-                    latitude=20,
-                    longitude=0,
-                    zoom=1.2,
-                    pitch=40,
-                    bearing=0
-                )
-                
-                deck = pdk.Deck(
-                    layers=[layer],
-                    initial_view_state=view_state,
-                    map_style='',  # Empty for default
-                    tooltip={
-                        "html": "<b>{country}</b><br/>Transactions: {txn_count}<br/>Approval: {approval_rate:.1f}%",
-                        "style": {
-                            "backgroundColor": "rgba(30, 20, 50, 0.9)",
-                            "color": "white",
-                            "border": "1px solid rgba(138, 43, 226, 0.5)",
-                            "borderRadius": "8px",
-                            "padding": "10px"
-                        }
+                # Create stunning choropleth map
+                fig = px.choropleth(
+                    geo_data,
+                    locations='country_code',
+                    locationmode='ISO-3',
+                    color='approval_rate',
+                    hover_name='country',
+                    hover_data={
+                        'country_code': False,
+                        'txn_count': ':,',
+                        'approval_rate': ':.1f',
+                        'total_volume': ':$,.0f',
+                        'avg_risk': ':.2f'
                     },
-                    height=600
+                    color_continuous_scale=[
+                        [0.0, '#4c1d95'],    # Deep purple
+                        [0.2, '#6b21a8'],    # Purple 800
+                        [0.4, '#7c3aed'],    # Violet 600
+                        [0.6, '#a78bfa'],    # Violet 400
+                        [0.8, '#c4b5fd'],    # Violet 300
+                        [1.0, '#e9d5ff']     # Violet 200
+                    ],
+                    labels={
+                        'approval_rate': 'Approval Rate (%)',
+                        'txn_count': 'Transactions',
+                        'total_volume': 'Volume',
+                        'avg_risk': 'Risk Score'
+                    }
                 )
                 
-                st.pydeck_chart(deck)
+                # Enhanced styling for dark theme
+                fig.update_layout(
+                    height=650,
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    geo=dict(
+                        bgcolor='rgba(0,0,0,0)',
+                        lakecolor='rgba(20, 15, 35, 0.8)',
+                        landcolor='rgba(30, 25, 45, 0.6)',
+                        oceancolor='rgba(15, 10, 30, 0.8)',
+                        showcountries=True,
+                        countrycolor='rgba(156, 39, 176, 0.3)',
+                        showcoastlines=True,
+                        coastlinecolor='rgba(192, 132, 252, 0.4)',
+                        showland=True,
+                        showlakes=True,
+                        showocean=True,
+                        projection=dict(
+                            type='natural earth',  # Beautiful curved projection
+                            rotation=dict(lon=0, lat=0, roll=0)
+                        ),
+                        center=dict(lat=20, lon=0),
+                        visible=True
+                    ),
+                    font=dict(
+                        family='Inter, sans-serif',
+                        color='white',
+                        size=12
+                    ),
+                    coloraxis=dict(
+                        colorbar=dict(
+                            title=dict(
+                                text="Approval Rate (%)",
+                                font=dict(color='rgba(232, 121, 249, 0.9)', size=12, family='Inter')
+                            ),
+                            bgcolor='rgba(30, 20, 50, 0.8)',
+                            bordercolor='rgba(156, 39, 176, 0.5)',
+                            borderwidth=1,
+                            tickmode='linear',
+                            tick0=0,
+                            dtick=20,
+                            tickfont=dict(color='rgba(192, 132, 252, 0.8)', size=10),
+                            tickcolor='rgba(156, 39, 176, 0.5)',
+                            thicknessmode='pixels',
+                            thickness=15,
+                            lenmode='pixels',
+                            len=250,
+                            x=1.02,
+                            xpad=10
+                        ),
+                        cmin=0,
+                        cmax=100
+                    ),
+                    hoverlabel=dict(
+                        bgcolor='rgba(30, 20, 50, 0.95)',
+                        bordercolor='rgba(192, 132, 252, 0.6)',
+                        font=dict(
+                            family='Inter, sans-serif',
+                            size=13,
+                            color='white'
+                        )
+                    )
+                )
+                
+                # Add subtle animation
+                fig.update_traces(
+                    marker=dict(
+                        line=dict(
+                            color='rgba(232, 121, 249, 0.4)',
+                            width=0.5
+                        )
+                    )
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, config={
+                    'displayModeBar': False,
+                    'scrollZoom': False
+                })
                 
             except Exception as e:
-                # Fallback to Plotly scatter_geo
-                st.info("💡 Using alternative visualization")
+                # Enhanced fallback with scatter geo
+                st.info("💫 Using enhanced bubble map visualization")
+                
+                # Normalize for better bubble sizes
+                max_txn = geo_data['txn_count'].max()
+                geo_data['bubble_size'] = (geo_data['txn_count'] / max_txn * 50).clip(5, 50)
                 
                 fig = px.scatter_geo(
                     geo_data,
                     lat='lat',
                     lon='lon',
-                    size='txn_count',
+                    size='bubble_size',
                     color='approval_rate',
                     hover_name='country',
-                    hover_data={'txn_count': ':,', 'approval_rate': ':.1f%'},
-                    color_continuous_scale=['#4B0082', '#8B00FF', '#DA70D6'],  # Purple scale
+                    hover_data={
+                        'lat': False,
+                        'lon': False,
+                        'bubble_size': False,
+                        'txn_count': ':,',
+                        'approval_rate': ':.1f%',
+                        'total_volume': ':$,.0f'
+                    },
+                    color_continuous_scale=[
+                        [0.0, '#4c1d95'],
+                        [0.25, '#6b21a8'],
+                        [0.5, '#7c3aed'],
+                        [0.75, '#a78bfa'],
+                        [1.0, '#e9d5ff']
+                    ],
                     size_max=50,
-                    projection='orthographic'  # 3D globe effect
+                    projection='natural earth'
                 )
                 
                 fig.update_layout(
-                    height=600,
+                    height=650,
+                    margin=dict(l=0, r=0, t=0, b=0),
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
                     geo=dict(
                         bgcolor='rgba(0,0,0,0)',
-                        lakecolor='rgba(15, 10, 30, 0.5)',
-                        landcolor='rgba(30, 20, 50, 0.3)',
-                        oceancolor='rgba(15, 10, 30, 0.5)',
+                        lakecolor='rgba(20, 15, 35, 0.8)',
+                        landcolor='rgba(30, 25, 45, 0.6)',
+                        oceancolor='rgba(15, 10, 30, 0.8)',
                         showcountries=True,
-                        countrycolor='rgba(138, 43, 226, 0.3)',
+                        countrycolor='rgba(156, 39, 176, 0.3)',
                         showcoastlines=True,
-                        coastlinecolor='rgba(186, 85, 211, 0.5)',
-                        projection_type='orthographic',
-                        projection_rotation=dict(lon=10, lat=20, roll=0)
+                        coastlinecolor='rgba(192, 132, 252, 0.4)',
+                        projection_type='natural earth'
                     ),
                     font=dict(color='white', family='Inter'),
                     coloraxis_colorbar=dict(
                         title="Approval %",
-                        ticksuffix='%',
                         bgcolor='rgba(30, 20, 50, 0.8)',
-                        tickcolor='white',
-                        tickfont=dict(color='white')
+                        bordercolor='rgba(156, 39, 176, 0.5)',
+                        tickcolor='rgba(192, 132, 252, 0.8)',
+                        tickfont=dict(color='rgba(192, 132, 252, 0.8)')
                     )
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, config={
+                    'displayModeBar': False
+                })
         
         st.markdown('</div>', unsafe_allow_html=True)
         
