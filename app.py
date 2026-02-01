@@ -1267,10 +1267,11 @@ def show_global_geo_analytics(checkout_data):
                                 "fontSize": "14px"
                             }
                         },
-                        map_style='mapbox://styles/mapbox/dark-v10'
+                        map_style='mapbox://styles/mapbox/light-v10',
+                        height=600
                     )
                     
-                    st.pydeck_chart(deck, use_container_width=True, height=600)
+                    st.pydeck_chart(deck, use_container_width=True)
                     
                     # Legend with PagoNxt colors
                     col1, col2, col3 = st.columns(3)
