@@ -55,3 +55,92 @@ env:
     value: "60"
   - name: CACHE_TTL_LONG
     value: "300"
+
+  # Premium Features
+  - name: 'ENABLE_ANIMATIONS'
+    value: 'true'
+  - name: 'ENABLE_GLASSMORPHISM'
+    value: 'true'
+  - name: 'ENABLE_GRADIENTS'
+    value: 'true'
+
+
+# Resource Allocation (High Performance for Premium Features)
+resources:
+  limits:
+    memory: "16Gi"      # Higher memory for geo-analytics
+    cpu: "8"            # More CPU for complex visualizations
+  requests:
+    memory: "8Gi"       # Initial memory reservation
+    cpu: "4"            # Initial CPU cores
+
+
+# Application Metadata
+metadata:
+  name: "pagonxt-getnet-rates"
+  displayName: "Payment Authorization Premium - Enterprise Edition"
+  description: |
+    Enterprise-grade payment authorization analytics platform with advanced geo-analytics.
+    
+    Premium Features:
+    - Executive Dashboard: Premium KPI cards with gradients and animations
+    - Global Geo-Analytics: Interactive 3D bubble maps (PyDeck) and choropleth maps
+    - Country Drill-Down: Detailed analysis for 18+ countries with lat/lon mapping
+    - Smart Checkout: Advanced solution optimization with cascading logic
+    - Decline Analysis: Deep-dive reason code analytics with heat maps
+    - Smart Retry: ML-powered retry recommendations with ROI calculator
+    - Performance Metrics: Comprehensive analytics with time-series analysis
+    - Genie AI Assistant: Natural language query interface
+    - Settings & Config: Policy management and customization
+    
+    Premium UI/UX:
+    - Modern dark theme with premium styling
+    - 500+ lines of custom CSS
+    - Smooth animations and transitions
+    - Glass-morphism effects
+    - Gradient headers and cards
+    - Responsive design for all devices
+    
+    Perfect for: Executive presentations, production use, enterprise deployments
+    
+    Built with: Streamlit, Plotly, PyDeck, PySpark, Delta Lake, MLflow, Databricks SQL
+  version: "3.0.0-premium"
+  author: "Databricks Solutions Team"
+  license: "Databricks License"
+  homepage: "https://github.com/databricks/payment-authorization-demo"
+  
+  tags:
+    - "payments"
+    - "fintech"
+    - "analytics"
+    - "databricks"
+    - "lakehouse"
+    - "streamlit"
+    - "machine-learning"
+    - "real-time"
+    - "geo-analytics"
+    - "premium"
+    - "enterprise"
+    - "pydeck"
+    - "choropleth"
+    - "multi-page"
+    - "advanced-visualizations"
+  
+  categories:
+    - "Financial Services"
+    - "Analytics & BI"
+    - "Machine Learning"
+    - "Enterprise Solutions"
+  
+  keywords:
+    - "payment authorization"
+    - "approval rate optimization"
+    - "smart checkout"
+    - "decline analysis"
+    - "smart retry"
+    - "geo-analytics"
+    - "geographic visualization"
+    - "country drill-down"
+    - "premium dashboard"
+    - "enterprise analytics"
+
