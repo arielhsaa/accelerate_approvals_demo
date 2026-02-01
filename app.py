@@ -1248,7 +1248,7 @@ def show_global_geo_analytics(checkout_data):
                         bearing=0
                     )
                     
-                    # Create deck with tooltip
+                    # Create deck with tooltip - Use open-street-map style (no token required)
                     deck = pdk.Deck(
                         layers=[layer],
                         initial_view_state=view_state,
@@ -1259,15 +1259,17 @@ def show_global_geo_analytics(checkout_data):
                                    "Volume: ${total_volume:,.0f}<br/>"
                                    "Avg Value: ${avg_value:.2f}",
                             "style": {
-                                "backgroundColor": "#1A1F2E",
-                                "color": "#FFFFFF",
+                                "backgroundColor": "#FFFFFF",
+                                "color": "#1A1F2E",
                                 "border": "2px solid #5B2C91",
                                 "borderRadius": "8px",
                                 "padding": "12px",
-                                "fontSize": "14px"
+                                "fontSize": "14px",
+                                "boxShadow": "0 2px 4px rgba(0,0,0,0.1)"
                             }
                         },
-                        map_style='mapbox://styles/mapbox/light-v10',
+                        # Use light map style that doesn't require Mapbox token
+                        map_style='',  # Empty string uses default basemap
                         height=600
                     )
                     
@@ -1288,10 +1290,11 @@ def show_global_geo_analytics(checkout_data):
                 
                 except Exception as e:
                     st.error(f"⚠️ Error rendering PyDeck map: {str(e)}")
-                    st.warning("Using alternative visualization. PyDeck maps require WebGL support in your browser.")
+                    st.info("💡 PyDeck requires WebGL support. Using Plotly map as alternative...")
                     
-                    # Fallback to simple scatter plot
+                    # Fallback to Plotly scatter_geo (works everywhere)
                     try:
+                        st.markdown("### 🌍 Interactive Geographic Visualization")
                         fig = px.scatter_geo(
                             geo_data,
                             lat='lat',
@@ -1299,35 +1302,57 @@ def show_global_geo_analytics(checkout_data):
                             size='txn_count',
                             color='approval_rate',
                             hover_name='country',
-                            hover_data=['approval_rate', 'txn_count', 'total_volume'],
-                            color_continuous_scale='Purples',
+                            hover_data={
+                                'lat': False,
+                                'lon': False,
+                                'approval_rate': ':.1f',
+                                'txn_count': ':,',
+                                'total_volume': ':$,.0f'
+                            },
+                            color_continuous_scale=[
+                                [0.0, '#FF3366'],   # Red for low
+                                [0.5, '#00A3E0'],   # Blue for medium
+                                [1.0, '#5B2C91']    # Purple for high
+                            ],
                             size_max=50,
-                            projection='natural earth'
+                            projection='natural earth',
+                            labels={'approval_rate': 'Approval Rate (%)'}
                         )
                         
                         fig.update_geos(
                             showcountries=True,
-                            countrycolor="#2D3748",
+                            countrycolor='#E2E8F0',
                             showcoastlines=True,
-                            coastlinecolor="#4A5568",
+                            coastlinecolor='#CBD5E0',
                             showland=True,
-                            landcolor="#0F1419",
+                            landcolor='#F8F9FA',
                             showocean=True,
-                            oceancolor="#0A0E12",
-                            bgcolor='#0F1419'
+                            oceancolor='#E6F3FF',
+                            bgcolor='#FFFFFF'
                         )
                         
                         fig.update_layout(
                             height=600,
-                            plot_bgcolor='#0F1419',
-                            paper_bgcolor='#1A1F2E',
-                            font_color='#B8C5D0'
+                            plot_bgcolor='#FFFFFF',
+                            paper_bgcolor='#FFFFFF',
+                            font_color='#1A1F2E',
+                            margin=dict(l=0, r=0, t=30, b=0)
                         )
                         
                         st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Legend
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.markdown('<span style="color: #5B2C91; font-size: 20px;">●</span> High Approval (≥90%)', unsafe_allow_html=True)
+                        with col2:
+                            st.markdown('<span style="color: #00A3E0; font-size: 20px;">●</span> Medium Approval (80-90%)', unsafe_allow_html=True)
+                        with col3:
+                            st.markdown('<span style="color: #FF3366; font-size: 20px;">●</span> Low Approval (<80%)', unsafe_allow_html=True)
+                            
                     except Exception as fallback_error:
                         st.error(f"⚠️ Fallback visualization also failed: {str(fallback_error)}")
-                        st.info("Try the Choropleth or Country Rankings tabs instead.")
+                        st.info("📊 Please check the Choropleth or Country Rankings tabs for geographic data.")
             else:
                 st.warning("No data available after filtering. Adjust filters to see map.")
         
