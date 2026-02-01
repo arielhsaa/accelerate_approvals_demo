@@ -103,7 +103,7 @@ env:
   - name: 'ENABLE_GRADIENTS'
     value: 'true'
 
-# Resource Allocation - Conservative for stability
+# Resource Allocation - Optimized for stability
 # Note: Reduced from 16Gi/8CPU to prevent resource unavailability issues
 resources:
   limits:
@@ -125,13 +125,13 @@ healthCheck:
 
 # Application Metadata
 metadata:
-  name: "payment-authorization-premium"
-  displayName: "Payment Authorization Premium - Enterprise Edition"
+  name: "pagonxt-getnet-rates"
+  displayName: "PagoNxt Getnet - Payment Authorization Platform"
   description: |
-    Enterprise-grade payment authorization analytics platform with advanced geo-analytics.
+    PagoNxt Getnet payment authorization analytics platform with advanced geo-analytics.
     
     Premium Features:
-    - Executive Dashboard: Premium KPI cards with gradients and animations
+    - Executive Dashboard: Premium KPI cards with PagoNxt Getnet brand colors
     - Global Geo-Analytics: Interactive 3D bubble maps (PyDeck) and choropleth maps
     - Country Drill-Down: Detailed analysis for 18+ countries with lat/lon mapping
     - Smart Checkout: Advanced solution optimization with cascading logic
@@ -141,8 +141,9 @@ metadata:
     - Genie AI Assistant: Natural language query interface
     - Settings & Config: Policy management and customization
     
-    Premium UI/UX:
-    - Modern dark theme with premium styling
+    PagoNxt Getnet Branded UI/UX:
+    - Purple/Blue gradient theme (#5B2C91 → #00A3E0)
+    - Modern fintech design with premium styling
     - 500+ lines of custom CSS
     - Smooth animations and transitions
     - Glass-morphism effects
@@ -152,8 +153,8 @@ metadata:
     Perfect for: Executive presentations, production use, enterprise deployments
     
     Built with: Streamlit, Plotly, PyDeck, PySpark, Delta Lake, MLflow, Databricks SQL
-  version: "3.0.0-premium"
-  author: "Databricks Solutions Team"
+  version: "3.0.0-pagonxt"
+  author: "PagoNxt Getnet + Databricks"
   license: "Databricks License"
   homepage: "https://github.com/databricks/payment-authorization-demo"
   

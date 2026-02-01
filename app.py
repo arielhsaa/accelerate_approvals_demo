@@ -9,35 +9,35 @@ from streamlit_option_menu import option_menu
 import json
 import pydeck as pdk
 
-# CSS STYLES - Define as constant, apply in main()
-SANTANDER_CSS = """
+# PagoNxt Getnet themed CSS - Define as constant, apply in main()
+PAGONXT_CSS = """
 <style>
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
-    /* Root variables - Santander Bank color palette */
+    /* Root variables - PagoNxt Getnet color palette */
     :root {
-        --primary-color: #EC0000;        /* Santander Red */
-        --primary-dark: #B80000;         /* Darker Santander Red */
-        --primary-light: #FF4040;        /* Lighter Santander Red */
-        --secondary-color: #666666;      /* Medium Grey */
-        --accent-color: #EC0000;         /* Santander Red accent */
-        --success-color: #00A972;        /* Green for success */
-        --warning-color: #FFA500;        /* Orange for warnings */
-        --danger-color: #EC0000;         /* Santander Red for danger */
-        --background-dark: #1A1A1A;      /* Dark grey background */
-        --background-darker: #0F0F0F;    /* Darker grey */
-        --card-background: #222222;      /* Card background */
-        --card-background-hover: #2A2A2A; /* Card hover state */
+        --primary-color: #5B2C91;        /* PagoNxt Purple */
+        --primary-dark: #3D1C61;         /* Darker Purple */
+        --primary-light: #7B3FB2;        /* Lighter Purple */
+        --secondary-color: #00A3E0;      /* Getnet Blue */
+        --accent-color: #00D9FF;         /* Bright Cyan accent */
+        --success-color: #00C389;        /* Green for success */
+        --warning-color: #FFB020;        /* Orange for warnings */
+        --danger-color: #FF3366;         /* Red for danger */
+        --background-dark: #0F1419;      /* Very dark blue-grey background */
+        --background-darker: #0A0E12;    /* Darker background */
+        --card-background: #1A1F2E;      /* Card background */
+        --card-background-hover: #232938; /* Card hover state */
         --text-primary: #FFFFFF;         /* White text */
-        --text-secondary: #CCCCCC;       /* Light grey text */
-        --text-muted: #999999;           /* Muted grey text */
-        --border-color: #444444;         /* Border grey */
-        --border-color-hover: #666666;   /* Border hover */
-        --shadow-sm: 0 1px 3px rgba(236, 0, 0, 0.12);
-        --shadow-md: 0 4px 6px rgba(236, 0, 0, 0.16);
-        --shadow-lg: 0 10px 15px rgba(236, 0, 0, 0.2);
-        --shadow-xl: 0 20px 25px rgba(236, 0, 0, 0.25);
+        --text-secondary: #B8C5D0;       /* Light blue-grey text */
+        --text-muted: #7C8896;           /* Muted grey-blue text */
+        --border-color: #2D3748;         /* Border dark blue-grey */
+        --border-color-hover: #4A5568;   /* Border hover */
+        --shadow-sm: 0 1px 3px rgba(91, 44, 145, 0.12);
+        --shadow-md: 0 4px 6px rgba(91, 44, 145, 0.16);
+        --shadow-lg: 0 10px 15px rgba(91, 44, 145, 0.2);
+        --shadow-xl: 0 20px 25px rgba(91, 44, 145, 0.25);
     }
     
     /* Global styles */
@@ -49,16 +49,16 @@ SANTANDER_CSS = """
         background-color: var(--background-dark);
     }
     
-    /* Santander header with gradient */
+    /* PagoNxt Getnet header with gradient */
     .premium-header {
-        background: linear-gradient(135deg, #EC0000 0%, #B80000 50%, #8B0000 100%);
+        background: linear-gradient(135deg, #5B2C91 0%, #3D1C61 50%, #00A3E0 100%);
         padding: 2.5rem 2rem;
         border-radius: 16px;
         margin-bottom: 2rem;
         box-shadow: var(--shadow-xl);
         position: relative;
         overflow: hidden;
-        border-left: 6px solid #FFFFFF;
+        border-left: 6px solid var(--accent-color);
     }
     
     .premium-header::before {
@@ -454,26 +454,18 @@ def load_data_from_delta(table_name, limit=10000):
     try:
         # Try to connect to Databricks
         from pyspark.sql import SparkSession
+        from databricks import sql
+        import os
         
         # Try to get existing Spark session (in Databricks environment)
-        # Use getOrCreate() which won't fail if session doesn't exist
-        spark = SparkSession.builder \
-            .appName("PaymentAuthorizationApp") \
-            .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
-            .getOrCreate()
+        spark = SparkSession.builder.getOrCreate()
         
         query = f"SELECT * FROM {table_name} LIMIT {limit}"
         df = spark.sql(query).toPandas()
         return df
-    except ImportError as e:
-        # PySpark not available (shouldn't happen in Databricks)
-        print(f"⚠️  PySpark import error: {e}")
-        return generate_synthetic_data(table_name)
     except Exception as e:
         # Fallback to synthetic data for demo/local testing
-        # Don't show warning every time (annoying for users)
-        # st.warning(f"Using synthetic data for demonstration.")
-        print(f"ℹ️  Using synthetic data for {table_name}: {e}")
+        st.warning(f"Using synthetic data for demonstration. Connection to database not available.")
         return generate_synthetic_data(table_name)
 
 def generate_synthetic_data(table_type):
@@ -575,12 +567,12 @@ def generate_synthetic_data(table_type):
 
 
 def show_premium_header():
-    """Display premium header with live status"""
+    """Display premium header with live status and PagoNxt Getnet branding"""
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     st.markdown(f"""
     <div class="premium-header">
-        <h1>💳 Payment Authorization Command Center</h1>
+        <h1>💳 PagoNxt Getnet Payment Authorization</h1>
         <p>Real-time global payment intelligence powered by Databricks Lakehouse</p>
         <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
             <span class="status-badge">
@@ -603,30 +595,39 @@ def show_premium_header():
 
 
 def main():
-    """Main application with enhanced navigation"""
+    """Main application with enhanced navigation and PagoNxt Getnet branding"""
     
     # Set page config - MUST BE FIRST STREAMLIT COMMAND
     st.set_page_config(
-        page_title="Payment Authorization Command Center",
+        page_title="PagoNxt Getnet - Payment Authorization",
         page_icon="💳",
         layout="wide",
         initial_sidebar_state="expanded",
         menu_items={
-            'Get Help': 'https://docs.databricks.com',
+            'Get Help': 'https://www.getnet.com',
             'Report a bug': None,
-            'About': "Payment Authorization Command Center v3.0 - Powered by Databricks"
+            'About': "PagoNxt Getnet Payment Authorization Platform - Powered by Databricks"
         }
     )
     
-    # Apply Santander Bank CSS theme
-    st.markdown(SANTANDER_CSS, unsafe_allow_html=True)
+    # Apply PagoNxt Getnet CSS theme
+    st.markdown(PAGONXT_CSS, unsafe_allow_html=True)
     
-    # Show premium header
+    # Show premium header with PagoNxt Getnet branding
     show_premium_header()
     
-    # Sidebar navigation with icons
+    # Sidebar navigation with PagoNxt Getnet branding
     with st.sidebar:
-        st.image("https://www.databricks.com/wp-content/uploads/2021/06/db-nav-logo.svg", width=180)
+        # PagoNxt Getnet logo
+        st.markdown("""
+        <div style="text-align: center; padding: 1rem 0;">
+            <div style="background: linear-gradient(135deg, #5B2C91 0%, #00A3E0 100%); padding: 2rem 1.5rem; border-radius: 16px; margin-bottom: 1rem; border: 2px solid #00D9FF;">
+                <h1 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: 1px;">PagoNxt</h1>
+                <p style="color: #00D9FF; margin: 0.3rem 0 0 0; font-size: 1.1rem; font-weight: 600;">Getnet</p>
+                <p style="color: rgba(255,255,255,0.8); margin: 0.5rem 0 0 0; font-size: 0.75rem;">Payment Authorization</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown("---")
         
         selected = option_menu(
@@ -646,7 +647,7 @@ def main():
             default_index=0,
             styles={
                 "container": {"padding": "0.5rem", "background-color": "#161B22"},
-                "icon": {"color": "#EC0000", "font-size": "1.2rem"},
+                "icon": {"color": "#00A3E0", "font-size": "1.2rem"},
                 "nav-link": {
                     "font-size": "0.95rem",
                     "text-align": "left",
@@ -1595,5 +1596,5 @@ if __name__ == "__main__":
     main()
 
 
-#   /Workspace/Users/<your-email>/pagonxt-getnet-rates --overwrite
-#   --source-code-path /Workspace/Users/<your-email>/pagonxt-getnet-rates
+#   /Workspace/Users/<your-email>/payment-authorization-premium --overwrite
+#   --source-code-path /Workspace/Users/<your-email>/payment-authorization-premium
