@@ -990,29 +990,53 @@ def show_global_geo_analytics(checkout_data):
     
     st.markdown("---")
     
-    # Prepare geo data
+    # Prepare geo data with filter application
     if 'geography' in checkout_data.columns and 'latitude' in checkout_data.columns and 'longitude' in checkout_data.columns:
         try:
-            geo_data = checkout_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg({
+            # Apply channel filter if selected
+            filtered_data = checkout_data.copy()
+            if channel_filter and 'channel' in filtered_data.columns:
+                filtered_data = filtered_data[filtered_data['channel'].isin(channel_filter)]
+            
+            # Check if we have data after filtering
+            if filtered_data.empty:
+                st.warning("⚠️ No data matches the selected filters. Please adjust your filter criteria.")
+                return
+            
+            # Aggregate geo data
+            geo_data = filtered_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg({
                 'approval_status': [
                     lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
                     'count'
                 ],
-                'amount': ['sum', 'mean'],
-                'risk_score': 'mean'
+                'amount': ['sum', 'mean'] if 'amount' in filtered_data.columns else lambda x: len(x),
+                'risk_score': 'mean' if 'risk_score' in filtered_data.columns else lambda x: 0.5
             }).reset_index()
             
-            geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'total_volume', 'avg_value', 'avg_risk']
+            # Handle column names based on aggregation
+            if 'amount' in filtered_data.columns:
+                geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'total_volume', 'avg_value', 'avg_risk']
+            else:
+                geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'avg_risk']
+                geo_data['total_volume'] = geo_data['txn_count'] * 100  # Simulated
+                geo_data['avg_value'] = 100  # Simulated
+            
+            # Apply minimum transaction filter
             geo_data = geo_data[geo_data['txn_count'] >= min_transactions]
+            
+            # Display filter summary
+            st.info(f"📊 Showing {len(geo_data)} countries | {geo_data['txn_count'].sum():,} total transactions | Min {min_transactions} txns per country")
+            
         except Exception as e:
-            st.error(f"Error preparing geo data: {e}")
-            st.info("Regenerating data with proper geo columns...")
+            st.error(f"⚠️ Error preparing geo data: {str(e)}")
+            st.info("🔄 Regenerating data with proper geo columns...")
             checkout_data = generate_synthetic_data('payments_enriched_stream')
             
             if 'geography' not in checkout_data.columns or 'latitude' not in checkout_data.columns:
-                st.error("Unable to generate geo data. Check data generation function.")
+                st.error("❌ Unable to generate geo data. Check data generation function.")
                 return
             
+            # Retry aggregation with regenerated data
             geo_data = checkout_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg({
                 'approval_status': [
                     lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
@@ -1228,8 +1252,8 @@ def show_global_geo_analytics(checkout_data):
                     st.plotly_chart(fig, use_container_width=True)
                 
                 except Exception as e:
-                    st.error(f"Error rendering choropleth map: {e}")
-                    st.info("Using fallback visualization...")
+                    st.error(f"⚠️ Error rendering choropleth map: {str(e)}")
+                    st.warning("📊 Using fallback visualization...")
                     
                     # Fallback: simple bar chart
                     fig = px.bar(
@@ -1239,194 +1263,225 @@ def show_global_geo_analytics(checkout_data):
                         orientation='h',
                         color='approval_rate',
                         color_continuous_scale='Purples',
-                        title="Top 20 Countries by Approval Rate"
+                        title="Top 20 Countries by Approval Rate",
+                        labels={'approval_rate': 'Approval Rate (%)'}
                     )
+                    fig.update_traces(texttemplate='%{x:.1f}%', textposition='outside')
                     fig.update_layout(
                         plot_bgcolor='#0F1419',
                         paper_bgcolor='#1A1F2E',
                         font_color='#B8C5D0',
-                        height=600
+                        height=600,
+                        showlegend=False
                     )
+                    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#30363D', range=[0, 100])
+                    fig.update_yaxes(showgrid=False)
                     st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("No data available after filtering. Adjust filters to see map.")
         
         with tab3:
-            st.markdown("### Country Performance Rankings")
+            st.markdown("### 📊 Country Performance Rankings")
             
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("#### 🏆 Top Performers (Approval Rate)")
-                top_performers = geo_data.nlargest(10, 'approval_rate')[['country', 'approval_rate', 'txn_count', 'total_volume']]
+            if not geo_data.empty:
+                col1, col2 = st.columns(2)
                 
-                for idx, row in top_performers.iterrows():
-                    st.markdown(f"""
-                    <div class="country-card">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <span class="country-name">{row['country']}</span>
-                                <div class="country-stats">
-                                    <div class="country-stat-item">
-                                        <span class="country-stat-label">Approval</span>
-                                        <span class="country-stat-value" style="color: #3FB950;">{row['approval_rate']:.1f}%</span>
-                                    </div>
-                                    <div class="country-stat-item">
-                                        <span class="country-stat-label">Volume</span>
-                                        <span class="country-stat-value">{row['txn_count']:,}</span>
-                                    </div>
-                                    <div class="country-stat-item">
-                                        <span class="country-stat-label">Value</span>
-                                        <span class="country-stat-value">${row['total_volume']:,.0f}</span>
+                with col1:
+                    st.markdown("#### 🏆 Top Performers (Approval Rate)")
+                    top_performers = geo_data.nlargest(10, 'approval_rate')[['country', 'approval_rate', 'txn_count', 'total_volume']]
+                    
+                    if not top_performers.empty:
+                        for idx, row in top_performers.iterrows():
+                            st.markdown(f"""
+                            <div class="country-card">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <span class="country-name">{row['country']}</span>
+                                        <div class="country-stats">
+                                            <div class="country-stat-item">
+                                                <span class="country-stat-label">Approval</span>
+                                                <span class="country-stat-value" style="color: #3FB950;">{row['approval_rate']:.1f}%</span>
+                                            </div>
+                                            <div class="country-stat-item">
+                                                <span class="country-stat-label">Volume</span>
+                                                <span class="country-stat-value">{row['txn_count']:,}</span>
+                                            </div>
+                                            <div class="country-stat-item">
+                                                <span class="country-stat-label">Value</span>
+                                                <span class="country-stat-value">${row['total_volume']:,.0f}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            
-            with col2:
-                st.markdown("#### 📈 Highest Volume")
-                top_volume = geo_data.nlargest(10, 'txn_count')[['country', 'approval_rate', 'txn_count', 'total_volume']]
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.info("No countries meet the filter criteria for top performers")
                 
-                for idx, row in top_volume.iterrows():
-                    approval_color = '#3FB950' if row['approval_rate'] >= 90 else '#D29922' if row['approval_rate'] >= 80 else '#F85149'
-                    st.markdown(f"""
-                    <div class="country-card">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <span class="country-name">{row['country']}</span>
-                                <div class="country-stats">
-                                    <div class="country-stat-item">
-                                        <span class="country-stat-label">Volume</span>
-                                        <span class="country-stat-value">{row['txn_count']:,}</span>
-                                    </div>
-                                    <div class="country-stat-item">
-                                        <span class="country-stat-label">Approval</span>
-                                        <span class="country-stat-value" style="color: {approval_color};">{row['approval_rate']:.1f}%</span>
-                                    </div>
-                                    <div class="country-stat-item">
-                                        <span class="country-stat-label">Value</span>
-                                        <span class="country-stat-value">${row['total_volume']:,.0f}</span>
+                with col2:
+                    st.markdown("#### 📈 Highest Volume")
+                    top_volume = geo_data.nlargest(10, 'txn_count')[['country', 'approval_rate', 'txn_count', 'total_volume']]
+                    
+                    if not top_volume.empty:
+                        for idx, row in top_volume.iterrows():
+                            approval_color = '#3FB950' if row['approval_rate'] >= 90 else '#D29922' if row['approval_rate'] >= 80 else '#F85149'
+                            st.markdown(f"""
+                            <div class="country-card">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <span class="country-name">{row['country']}</span>
+                                        <div class="country-stats">
+                                            <div class="country-stat-item">
+                                                <span class="country-stat-label">Volume</span>
+                                                <span class="country-stat-value">{row['txn_count']:,}</span>
+                                            </div>
+                                            <div class="country-stat-item">
+                                                <span class="country-stat-label">Approval</span>
+                                                <span class="country-stat-value" style="color: {approval_color};">{row['approval_rate']:.1f}%</span>
+                                            </div>
+                                            <div class="country-stat-item">
+                                                <span class="country-stat-label">Value</span>
+                                                <span class="country-stat-value">${row['total_volume']:,.0f}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.info("No countries meet the filter criteria for highest volume")
+            else:
+                st.warning("No data available. Adjust filters to see country rankings.")
         
         with tab4:
             st.markdown("### 🔍 Country Drill-Down Analysis")
             
-            selected_country = st.selectbox(
-                "Select Country for Detailed Analysis",
-                options=sorted(geo_data['country'].unique())
-            )
-            
-            if selected_country:
-                country_data = checkout_data[checkout_data['geography'] == selected_country]
+            if not geo_data.empty:
+                selected_country = st.selectbox(
+                    "Select Country for Detailed Analysis",
+                    options=sorted(geo_data['country'].unique())
+                )
                 
-                if not country_data.empty:
-                    # Country-specific KPIs
-                    col1, col2, col3, col4 = st.columns(4)
+                if selected_country:
+                    country_data = checkout_data[checkout_data['geography'] == selected_country]
                     
-                    country_approval = (country_data['approval_status'] == 'approved').sum() / len(country_data) * 100
-                    country_volume = country_data[country_data['approval_status'] == 'approved']['amount'].sum()
-                    country_avg_risk = country_data['risk_score'].mean()
-                    country_txns = len(country_data)
-                    
-                    with col1:
-                        st.metric("Approval Rate", f"{country_approval:.1f}%", "+2.3%")
-                    with col2:
-                        st.metric("Total Volume", f"${country_volume:,.0f}", "+$12.5K")
-                    with col3:
-                        st.metric("Avg Risk Score", f"{country_avg_risk:.3f}", "-0.05")
-                    with col4:
-                        st.metric("Transactions", f"{country_txns:,}", "+125")
-                    
-                    # Channel breakdown
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown(f"#### 📱 Channel Distribution - {selected_country}")
-                        if 'channel' in country_data.columns:
-                            channel_stats = country_data.groupby('channel').size().reset_index(name='count')
-                            fig = px.pie(
-                                channel_stats,
-                                values='count',
-                                names='channel',
-                                hole=0.4,
-                                color_discrete_sequence=px.colors.sequential.Reds_r
-                            )
-                            fig.update_layout(
-                                plot_bgcolor='#0D1117',
-                                paper_bgcolor='#161B22',
-                                font_color='#C9D1D9',
-                                height=350
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                    
-                    with col2:
-                        st.markdown(f"#### 🎯 Solution Mix Performance - {selected_country}")
-                        if 'recommended_solution_name' in country_data.columns:
-                            solution_stats = country_data.groupby('recommended_solution_name').agg({
-                                'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100
+                    if not country_data.empty:
+                        # Country-specific KPIs
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        country_approval = (country_data['approval_status'] == 'approved').sum() / len(country_data) * 100 if 'approval_status' in country_data.columns else 0
+                        country_volume = country_data[country_data['approval_status'] == 'approved']['amount'].sum() if 'amount' in country_data.columns and 'approval_status' in country_data.columns else 0
+                        country_avg_risk = country_data['risk_score'].mean() if 'risk_score' in country_data.columns else 0
+                        country_txns = len(country_data)
+                        
+                        with col1:
+                            st.metric("Approval Rate", f"{country_approval:.1f}%", "+2.3%")
+                        with col2:
+                            st.metric("Total Volume", f"${country_volume:,.0f}", "+$12.5K")
+                        with col3:
+                            st.metric("Avg Risk Score", f"{country_avg_risk:.3f}", "-0.05")
+                        with col4:
+                            st.metric("Transactions", f"{country_txns:,}", "+125")
+                        
+                        st.markdown("---")
+                        
+                        # Channel and solution breakdown
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.markdown(f"#### 📱 Channel Distribution - {selected_country}")
+                            if 'channel' in country_data.columns:
+                                channel_stats = country_data.groupby('channel').size().reset_index(name='count')
+                                fig = px.pie(
+                                    channel_stats,
+                                    values='count',
+                                    names='channel',
+                                    hole=0.4,
+                                    color_discrete_sequence=['#5B2C91', '#00A3E0', '#00D9FF', '#FF6B6B']
+                                )
+                                fig.update_layout(
+                                    plot_bgcolor='#0D1117',
+                                    paper_bgcolor='#161B22',
+                                    font_color='#C9D1D9',
+                                    height=350
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.info("Channel data not available")
+                        
+                        with col2:
+                            st.markdown(f"#### 🎯 Solution Mix Performance - {selected_country}")
+                            if 'recommended_solution_name' in country_data.columns and 'approval_status' in country_data.columns:
+                                solution_stats = country_data.groupby('recommended_solution_name').agg({
+                                    'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0
+                                }).reset_index()
+                                solution_stats.columns = ['solution', 'approval_rate']
+                                solution_stats = solution_stats.nlargest(8, 'approval_rate')
+                                
+                                fig = px.bar(
+                                    solution_stats,
+                                    x='approval_rate',
+                                    y='solution',
+                                    orientation='h',
+                                    color='approval_rate',
+                                    color_continuous_scale='Purples',
+                                    labels={'approval_rate': 'Approval Rate (%)'}
+                                )
+                                fig.update_traces(texttemplate='%{x:.1f}%', textposition='outside')
+                                fig.update_layout(
+                                    plot_bgcolor='#0D1117',
+                                    paper_bgcolor='#161B22',
+                                    font_color='#C9D1D9',
+                                    height=350,
+                                    showlegend=False
+                                )
+                                fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#30363D', range=[0, 100])
+                                fig.update_yaxes(showgrid=False)
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.info("Solution mix data not available")
+                        
+                        # Time series for country
+                        st.markdown(f"#### 📈 Hourly Performance Trends - {selected_country}")
+                        if 'timestamp' in country_data.columns and 'approval_status' in country_data.columns:
+                            country_data['timestamp'] = pd.to_datetime(country_data['timestamp'])
+                            hourly = country_data.set_index('timestamp').resample('1H').agg({
+                                'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
+                                'transaction_id': 'count' if 'transaction_id' in country_data.columns else lambda x: len(x)
                             }).reset_index()
-                            solution_stats.columns = ['solution', 'approval_rate']
-                            solution_stats = solution_stats.nlargest(8, 'approval_rate')
+                            hourly.columns = ['timestamp', 'approval_rate', 'txn_count']
                             
-                            fig = px.bar(
-                                solution_stats,
-                                x='approval_rate',
-                                y='solution',
-                                orientation='h',
-                                color='approval_rate',
-                                color_continuous_scale='Greens',
-                                labels={'approval_rate': 'Approval Rate (%)'}
-                            )
+                            fig = go.Figure()
+                            fig.add_trace(go.Scatter(
+                                x=hourly['timestamp'],
+                                y=hourly['approval_rate'],
+                                mode='lines+markers',
+                                name='Approval Rate',
+                                line=dict(color='#5B2C91', width=3),
+                                fill='tozeroy',
+                                fillcolor='rgba(91, 44, 145, 0.1)',
+                                hovertemplate='%{y:.1f}%<extra></extra>'
+                            ))
+                            
                             fig.update_layout(
                                 plot_bgcolor='#0D1117',
                                 paper_bgcolor='#161B22',
                                 font_color='#C9D1D9',
                                 height=350,
+                                xaxis_title="Time",
+                                yaxis_title="Approval Rate (%)",
                                 showlegend=False
                             )
+                            fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#30363D')
+                            fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#30363D', range=[0, 100])
+                            
                             st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Time series for country
-                    st.markdown(f"#### 📈 Hourly Trends - {selected_country}")
-                    if 'timestamp' in country_data.columns:
-                        country_data['timestamp'] = pd.to_datetime(country_data['timestamp'])
-                        hourly = country_data.set_index('timestamp').resample('1H').agg({
-                            'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
-                            'transaction_id': 'count'
-                        }).reset_index()
-                        hourly.columns = ['timestamp', 'approval_rate', 'txn_count']
-                        
-                        fig = go.Figure()
-                        fig.add_trace(go.Scatter(
-                            x=hourly['timestamp'],
-                            y=hourly['approval_rate'],
-                            mode='lines+markers',
-                            name='Approval Rate',
-                            line=dict(color='#3FB950', width=2),
-                            fill='tozeroy',
-                            fillcolor='rgba(63, 185, 80, 0.1)'
-                        ))
-                        
-                        fig.update_layout(
-                            plot_bgcolor='#0D1117',
-                            paper_bgcolor='#161B22',
-                            font_color='#C9D1D9',
-                            height=300,
-                            xaxis_title="Time",
-                            yaxis_title="Approval Rate (%)",
-                            showlegend=False
-                        )
-                        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#30363D')
-                        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#30363D', range=[0, 100])
-                        
-                        st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            st.info("Time series data not available")
+                    else:
+                        st.warning(f"No transaction data available for {selected_country}")
+            else:
+                st.warning("No countries available. Adjust filters to see drill-down analysis.")
 
 
 
