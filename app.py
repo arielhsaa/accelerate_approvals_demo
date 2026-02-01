@@ -952,11 +952,21 @@ def show_global_geo_analytics(checkout_data):
         )
     
     with col2:
-        channel_filter = st.multiselect(
-            "📱 Channel",
-            options=['All'] + list(checkout_data['channel'].unique()) if 'channel' in checkout_data.columns else ['All'],
-            default=['All']
-        )
+        # Get unique channels, ensuring we have valid data
+        if 'channel' in checkout_data.columns:
+            unique_channels = sorted([str(ch) for ch in checkout_data['channel'].dropna().unique()])
+            if unique_channels:
+                channel_filter = st.multiselect(
+                    "📱 Channel",
+                    options=unique_channels,
+                    default=unique_channels  # Select all by default
+                )
+            else:
+                channel_filter = []
+                st.multiselect("📱 Channel", options=[], default=[])
+        else:
+            channel_filter = []
+            st.multiselect("📱 Channel", options=[], default=[])
     
     with col3:
         min_transactions = st.slider(
