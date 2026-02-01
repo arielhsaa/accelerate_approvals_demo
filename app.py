@@ -707,12 +707,17 @@ def show_executive_dashboard(checkout_data, decline_data, retry_data):
     
     st.markdown('<h2 class="section-header-premium">📊 Executive Overview</h2>', unsafe_allow_html=True)
     
+    # Ensure checkout_data has required columns
+    if checkout_data.empty or 'approval_status' not in checkout_data.columns:
+        # Regenerate data if missing critical columns
+        checkout_data = generate_synthetic_data('payments_enriched_stream')
+    
     # Calculate KPIs
-    if not checkout_data.empty:
+    if not checkout_data.empty and 'approval_status' in checkout_data.columns:
         total_transactions = len(checkout_data)
         approved = checkout_data[checkout_data['approval_status'] == 'approved']
         approval_rate = (len(approved) / total_transactions * 100) if total_transactions > 0 else 0
-        total_volume = approved['amount'].sum() if 'amount' in approved.columns else 0
+        total_volume = approved['amount'].sum() if 'amount' in approved.columns and not approved.empty else 0
         avg_risk = checkout_data['risk_score'].mean() if 'risk_score' in checkout_data.columns else 0
         
         # Calculate deltas (simulated)
