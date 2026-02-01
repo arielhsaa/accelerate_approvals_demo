@@ -1385,12 +1385,18 @@ def show_smart_checkout(checkout_data):
     </div>
     """, unsafe_allow_html=True)
     
+    # Ensure we have valid data with required columns
+    if checkout_data.empty or 'recommended_solution_name' not in checkout_data.columns or 'approval_status' not in checkout_data.columns:
+        st.info("🔄 Loading Smart Checkout data...")
+        checkout_data = generate_synthetic_data('payments_enriched_stream')
+    
     if checkout_data.empty:
         st.warning("No checkout data available")
         return
     
     # Solution mix performance
-    if 'recommended_solution_name' in checkout_data.columns:
+    try:
+        if 'recommended_solution_name' in checkout_data.columns and 'approval_status' in checkout_data.columns:
         solution_stats = checkout_data.groupby('recommended_solution_name').agg({
             'approval_status': lambda x: (x == 'approved').sum() / len(x) * 100,
             'transaction_id': 'count',
@@ -1447,6 +1453,9 @@ def show_smart_checkout(checkout_data):
             use_container_width=True,
             height=400
         )
+    except Exception as e:
+        st.error(f"⚠️ Error rendering Smart Checkout analytics: {str(e)}")
+        st.info("Please ensure the data includes 'recommended_solution_name', 'approval_status', 'transaction_id', and 'risk_score' columns.")
 
 def show_decline_analysis(decline_data, checkout_data):
     """Enhanced decline analysis page"""
