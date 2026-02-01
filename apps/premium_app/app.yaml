@@ -120,7 +120,7 @@ healthCheck:
 
 # Application Metadata
 metadata:
-  name: "payment-authorization-premium"
+  name: "pagonxt-getnet-rates"
   displayName: "Payment Authorization Premium - Enterprise Edition"
   description: |
     Enterprise-grade payment authorization analytics platform with advanced geo-analytics.

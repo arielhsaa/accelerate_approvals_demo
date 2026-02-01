@@ -1646,13 +1646,13 @@ if __name__ == "__main__":
 # MAGIC 2. **Upload to Databricks workspace:**
 # MAGIC ```bash
 # MAGIC databricks workspace import-dir /tmp/payment-app-premium \
-#   /Workspace/Users/<your-email>/payment-authorization-premium --overwrite
+#   /Workspace/Users/<your-email>/pagonxt-getnet-rates --overwrite
 # MAGIC ```
 # MAGIC
 # MAGIC 3. **Deploy the app:**
 # MAGIC ```bash
-# MAGIC databricks apps deploy payment-authorization-premium \
-#   --source-code-path /Workspace/Users/<your-email>/payment-authorization-premium
+# MAGIC databricks apps deploy pagonxt-getnet-rates \
+#   --source-code-path /Workspace/Users/<your-email>/pagonxt-getnet-rates
 # MAGIC ```
 # MAGIC
 # MAGIC **Features include:**

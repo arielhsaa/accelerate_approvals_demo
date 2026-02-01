@@ -1578,5 +1578,5 @@ if __name__ == "__main__":
     main()
 
 
-#   /Workspace/Users/<your-email>/payment-authorization-premium --overwrite
-#   --source-code-path /Workspace/Users/<your-email>/payment-authorization-premium
+#   /Workspace/Users/<your-email>/pagonxt-getnet-rates --overwrite
+#   --source-code-path /Workspace/Users/<your-email>/pagonxt-getnet-rates

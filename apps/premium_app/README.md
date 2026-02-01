@@ -67,11 +67,11 @@ cp requirements.txt /tmp/payment-premium-app/
 
 # 2. Subir a Databricks workspace
 databricks workspace import-dir /tmp/payment-premium-app \
-  /Workspace/Users/<your-email>/payment-authorization-premium --overwrite
+  /Workspace/Users/<your-email>/pagonxt-getnet-rates --overwrite
 
 # 3. Desplegar app
-databricks apps deploy payment-authorization-premium \
-  --source-code-path /Workspace/Users/<your-email>/payment-authorization-premium
+databricks apps deploy pagonxt-getnet-rates \
+  --source-code-path /Workspace/Users/<your-email>/pagonxt-getnet-rates
 ```
 
 ## Configuración

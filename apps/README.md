@@ -118,8 +118,8 @@ databricks apps deploy payment-authorization-advanced \
 ### Premium App
 ```bash
 cd apps/premium_app
-databricks apps deploy payment-authorization-premium \
-  --source-code-path /Workspace/Users/<email>/payment-authorization-premium
+databricks apps deploy pagonxt-getnet-rates \
+  --source-code-path /Workspace/Users/<email>/pagonxt-getnet-rates
 ```
 
 ---
@@ -141,7 +141,7 @@ databricks apps deploy payment-authorization-premium \
 - **Features:** Completas excepto geo-analytics avanzadas
 
 ### Premium App (`app.yaml`)
-- **Nombre:** `payment-authorization-premium`
+- **Nombre:** `pagonxt-getnet-rates`
 - **Memoria:** 8-16 Gi
 - **CPU:** 4-8 cores
 - **Refresh:** 30 segundos

@@ -11,10 +11,10 @@ Created an **enterprise-grade premium version** of the Databricks app with drama
 ### 0. Verify App Deployment
 ```bash
 # Check app status
-databricks apps get payment-authorization-premium
+databricks apps get pagonxt-getnet-rates
 
 # Expected output:
-# Name: payment-authorization-premium
+# Name: pagonxt-getnet-rates
 # Status: RUNNING
 # URL: https://<workspace>.cloud.databricks.com/apps/<app-id>
 ```
@@ -305,17 +305,17 @@ cp requirements.txt /tmp/payment-app-premium/
 
 # 3. Upload to Databricks
 databricks workspace import-dir /tmp/payment-app-premium \
-  /Workspace/Users/<your-email>/payment-authorization-premium --overwrite
+  /Workspace/Users/<your-email>/pagonxt-getnet-rates --overwrite
 
 # 4. Deploy app
-databricks apps deploy payment-authorization-premium \
-  --source-code-path /Workspace/Users/<your-email>/payment-authorization-premium
+databricks apps deploy pagonxt-getnet-rates \
+  --source-code-path /Workspace/Users/<your-email>/pagonxt-getnet-rates
 ```
 
 ### Method 2: Databricks UI
 
 1. Navigate to **Workspace** → **Users** → `<your-email>`
-2. Create folder: `payment-authorization-premium`
+2. Create folder: `pagonxt-getnet-rates`
 3. Upload files:
    - `08_premium_app_ui.py` → rename to `app.py`
    - `app.yaml` (from root)
