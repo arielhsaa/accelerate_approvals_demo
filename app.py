@@ -1461,6 +1461,9 @@ def show_global_geo_analytics(checkout_data):
                 geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'avg_risk']
                 geo_data['total_volume'] = geo_data['txn_count'] * 100
                 geo_data['avg_value'] = 100
+            
+            # Filter countries with minimal transactions (at least 5)
+            geo_data = geo_data[geo_data['txn_count'] >= 5]
         else:
             st.error("⚠️ Missing required geo columns")
             st.markdown('</div>', unsafe_allow_html=True)
