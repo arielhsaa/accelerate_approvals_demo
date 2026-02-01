@@ -248,7 +248,7 @@ st.markdown("""
     
     /* Info boxes with enhanced styling */
     .info-box-premium {
-        background: linear-gradient(135deg, rgba(88, 166, 255, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%);
+        background: linear-gradient(135deg, rgba(236, 0, 0, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%);
         border: 1px solid rgba(88, 166, 255, 0.3);
         border-left: 4px solid var(--accent-color);
         padding: 1.5rem;
@@ -629,7 +629,7 @@ def main():
             default_index=0,
             styles={
                 "container": {"padding": "0.5rem", "background-color": "#161B22"},
-                "icon": {"color": "#58A6FF", "font-size": "1.2rem"},
+                "icon": {"color": "#EC0000", "font-size": "1.2rem"},
                 "nav-link": {
                     "font-size": "0.95rem",
                     "text-align": "left",
@@ -798,7 +798,7 @@ def show_executive_dashboard(checkout_data, decline_data, retry_data):
                 x=hourly_stats['timestamp'],
                 y=hourly_stats['transaction_count'],
                 name='Transaction Volume',
-                marker_color='#58A6FF',
+                marker_color='#EC0000',
                 opacity=0.3,
                 hovertemplate='%{y} txns<extra></extra>'
             ),
