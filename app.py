@@ -454,6 +454,151 @@ PAGONXT_CSS = """
         font-size: 1rem;
     }
     
+    /* Dark Futuristic Map Page */
+    .dark-map-container {
+        background: linear-gradient(135deg, #0f0a1e 0%, #1a0d2e 50%, #0f0a1e 100%);
+        padding: 2rem;
+        border-radius: var(--radius-lg);
+        min-height: 800px;
+        position: relative;
+        overflow: hidden;
+        margin: 2rem 0;
+    }
+    
+    .dark-map-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 80% 50%, rgba(75, 0, 130, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    
+    .dark-stat-card {
+        background: rgba(30, 20, 50, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(138, 43, 226, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .dark-stat-card:hover {
+        border-color: rgba(186, 85, 211, 0.6);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(138, 43, 226, 0.3);
+    }
+    
+    .dark-stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #da70d6 0%, #ba55d3 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0.5rem 0;
+    }
+    
+    .dark-stat-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 500;
+    }
+    
+    .dark-stat-delta {
+        color: #7dd3fc;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .dark-country-item {
+        background: rgba(30, 20, 50, 0.4);
+        border: 1px solid rgba(138, 43, 226, 0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .dark-country-item:hover {
+        background: rgba(40, 30, 60, 0.6);
+        border-color: rgba(186, 85, 211, 0.4);
+    }
+    
+    .dark-country-name {
+        color: white;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .dark-country-value {
+        color: #da70d6;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .dark-country-percentage {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.875rem;
+        margin-left: 0.5rem;
+    }
+    
+    .dark-trend-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+    
+    .dark-trend-indicator.up {
+        background: #10b981;
+        box-shadow: 0 0 10px #10b981;
+    }
+    
+    .dark-trend-indicator.down {
+        background: #ef4444;
+        box-shadow: 0 0 10px #ef4444;
+    }
+    
+    .globe-section-title {
+        color: white;
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .globe-section-subtitle {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        z-index: 1;
+    }
+    
     /* Filters and controls */
     .filter-container {
         background: var(--card-background);
@@ -1136,67 +1281,272 @@ def show_executive_dashboard(checkout_data, decline_data, retry_data):
 
 
 def show_global_geo_analytics(checkout_data):
-    """Advanced geo-location analytics with interactive maps"""
+    """Dark futuristic geo-location analytics with 3D globe visualization"""
     
-    st.markdown('<h2 class="section-header-premium">🗺️ Global Geo-Location Analytics</h2>', unsafe_allow_html=True)
+    # Dark futuristic container
+    st.markdown('<div class="dark-map-container">', unsafe_allow_html=True)
     
+    # Title section
     st.markdown("""
-    <div class="info-box-premium">
-        <p><strong>Interactive geographic analysis</strong> of payment authorization performance across countries. 
-        Click on countries for detailed drill-downs.</p>
+    <div style="position: relative; z-index: 1;">
+        <h1 class="globe-section-title">General Statistics</h1>
+        <p class="globe-section-subtitle">All Users • Global Activity Monitoring</p>
     </div>
     """, unsafe_allow_html=True)
     
     # Ensure we have valid geo data
     if checkout_data.empty or 'latitude' not in checkout_data.columns or 'longitude' not in checkout_data.columns:
-        st.info("🔄 Loading geo-analytics data...")
         checkout_data = generate_synthetic_data('payments_enriched_stream')
     
     if checkout_data.empty:
-        st.warning("No data available for geo-analytics")
+        st.markdown('<p style="color: rgba(255,255,255,0.7); position: relative; z-index: 1;">⚠️ No data available for geo-analytics</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         return
     
-    # Filters
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        time_range = st.selectbox(
-            "📅 Time Range",
-            ["Last Hour", "Last 6 Hours", "Last 24 Hours", "Last 7 Days", "Last 30 Days"],
-            index=2
-        )
-    
-    with col2:
-        # Get unique channels, ensuring we have valid data
-        if 'channel' in checkout_data.columns:
-            unique_channels = sorted([str(ch) for ch in checkout_data['channel'].dropna().unique()])
-            if unique_channels:
-                channel_filter = st.multiselect(
-                    "📱 Channel",
-                    options=unique_channels,
-                    default=unique_channels  # Select all by default
-                )
+    # Prepare aggregated data
+    try:
+        if 'geography' in checkout_data.columns and 'latitude' in checkout_data.columns:
+            geo_data = checkout_data.groupby(['geography', 'latitude', 'longitude', 'country_code']).agg({
+                'approval_status': [
+                    lambda x: (x == 'approved').sum() / len(x) * 100 if len(x) > 0 else 0,
+                    'count'
+                ],
+                'amount': ['sum', 'mean'] if 'amount' in checkout_data.columns else lambda x: len(x),
+                'risk_score': 'mean' if 'risk_score' in checkout_data.columns else lambda x: 0.5
+            }).reset_index()
+            
+            if 'amount' in checkout_data.columns:
+                geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'total_volume', 'avg_value', 'avg_risk']
             else:
-                channel_filter = []
-                st.multiselect("📱 Channel", options=[], default=[])
+                geo_data.columns = ['country', 'lat', 'lon', 'country_code', 'approval_rate', 'txn_count', 'avg_risk']
+                geo_data['total_volume'] = geo_data['txn_count'] * 100
+                geo_data['avg_value'] = 100
         else:
-            channel_filter = []
-            st.multiselect("📱 Channel", options=[], default=[])
+            st.error("⚠️ Missing required geo columns")
+            st.markdown('</div>', unsafe_allow_html=True)
+            return
+    except Exception as e:
+        st.error(f"⚠️ Error preparing geo data: {str(e)}")
+        st.markdown('</div>', unsafe_allow_html=True)
+        return
     
-    with col3:
-        min_transactions = st.slider(
-            "Min Transactions",
-            min_value=0,
-            max_value=500,
-            value=10,
-            step=10
-        )
+    # Layout: Two columns
+    col_left, col_main = st.columns([1, 2])
     
-    with col4:
-        metric_view = st.selectbox(
-            "🎯 Primary Metric",
-            ["Approval Rate", "Transaction Volume", "Avg Transaction Value", "Risk Score"]
-        )
+    with col_left:
+        # Total users stat (big number)
+        total_transactions = int(geo_data['txn_count'].sum())
+        st.markdown(f"""
+        <div class="dark-stat-card">
+            <p class="dark-stat-label">ALL USERS</p>
+            <h1 class="dark-stat-value" style="font-size: 3rem;">{total_transactions:,}</h1>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Current Activity with progress bar
+        approval_rate = geo_data['approval_rate'].mean()
+        st.markdown(f"""
+        <div class="dark-stat-card">
+            <p class="dark-stat-label">CURRENT ACTIVITY</p>
+            <div style="margin-top: 1rem;">
+                <div style="background: rgba(138, 43, 226, 0.3); height: 6px; border-radius: 3px; overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, #da70d6, #ba55d3); width: {approval_rate}%; height: 100%;"></div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Top countries list
+        st.markdown('<p class="globe-section-subtitle" style="margin-top: 2rem;">TOP COUNTRIES</p>', unsafe_allow_html=True)
+        
+        top_countries = geo_data.nlargest(4, 'txn_count')
+        country_flags = {
+            'United States': '🇺🇸', 'USA': '🇺🇸',
+            'France': '🇫🇷',
+            'China': '🇨🇳',
+            'Brazil': '🇧🇷',
+            'United Kingdom': '🇬🇧', 'UK': '🇬🇧',
+            'Germany': '🇩🇪',
+            'Japan': '🇯🇵',
+            'India': '🇮🇳',
+            'Canada': '🇨🇦',
+            'Mexico': '🇲🇽',
+            'Spain': '🇪🇸',
+            'Italy': '🇮🇹'
+        }
+        
+        for idx, row in top_countries.iterrows():
+            flag = country_flags.get(row['country'], '🌍')
+            percentage = (row['txn_count'] / total_transactions * 100) if total_transactions > 0 else 0
+            trend_class = 'up' if row['approval_rate'] > 85 else 'down'
+            
+            st.markdown(f"""
+            <div class="dark-country-item">
+                <div class="dark-country-name">
+                    <span class="dark-trend-indicator {trend_class}"></span>
+                    <span>{flag}</span>
+                    <span>{row['country']}</span>
+                </div>
+                <div>
+                    <span class="dark-country-value">{int(row['txn_count']):,}</span>
+                    <span class="dark-country-percentage">{percentage:.0f}%</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with col_main:
+        # Globe visualization area
+        st.markdown('<div style="position: relative; z-index: 1; margin-top: 2rem;">', unsafe_allow_html=True)
+        
+        # Try PyDeck first for 3D globe effect
+        if not geo_data.empty:
+            try:
+                # Normalize values for bubble size
+                geo_data['size'] = (geo_data['txn_count'] / geo_data['txn_count'].max() * 1000000).fillna(0)
+                
+                # Purple/blue color scheme for dark theme
+                def get_dark_color(approval_rate):
+                    if approval_rate >= 90:
+                        return [218, 112, 214, 200]  # Orchid
+                    elif approval_rate >= 80:
+                        return [186, 85, 211, 200]  # Medium Orchid
+                    else:
+                        return [147, 51, 234, 200]  # Purple
+                
+                geo_data['color'] = geo_data['approval_rate'].apply(get_dark_color)
+                
+                # Create PyDeck layer with dark style
+                layer = pdk.Layer(
+                    "ScatterplotLayer",
+                    data=geo_data,
+                    get_position=['lon', 'lat'],
+                    get_radius='size',
+                    get_fill_color='color',
+                    pickable=True,
+                    opacity=0.8,
+                    stroked=True,
+                    filled=True,
+                    radius_scale=1,
+                    radius_min_pixels=3,
+                    radius_max_pixels=60,
+                    line_width_min_pixels=1,
+                    get_line_color=[255, 255, 255, 100]
+                )
+                
+                view_state = pdk.ViewState(
+                    latitude=20,
+                    longitude=0,
+                    zoom=1.2,
+                    pitch=40,
+                    bearing=0
+                )
+                
+                deck = pdk.Deck(
+                    layers=[layer],
+                    initial_view_state=view_state,
+                    map_style='',  # Empty for default
+                    tooltip={
+                        "html": "<b>{country}</b><br/>Transactions: {txn_count}<br/>Approval: {approval_rate:.1f}%",
+                        "style": {
+                            "backgroundColor": "rgba(30, 20, 50, 0.9)",
+                            "color": "white",
+                            "border": "1px solid rgba(138, 43, 226, 0.5)",
+                            "borderRadius": "8px",
+                            "padding": "10px"
+                        }
+                    },
+                    height=600
+                )
+                
+                st.pydeck_chart(deck)
+                
+            except Exception as e:
+                # Fallback to Plotly scatter_geo
+                st.info("💡 Using alternative visualization")
+                
+                fig = px.scatter_geo(
+                    geo_data,
+                    lat='lat',
+                    lon='lon',
+                    size='txn_count',
+                    color='approval_rate',
+                    hover_name='country',
+                    hover_data={'txn_count': ':,', 'approval_rate': ':.1f%'},
+                    color_continuous_scale=['#4B0082', '#8B00FF', '#DA70D6'],  # Purple scale
+                    size_max=50,
+                    projection='orthographic'  # 3D globe effect
+                )
+                
+                fig.update_layout(
+                    height=600,
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    geo=dict(
+                        bgcolor='rgba(0,0,0,0)',
+                        lakecolor='rgba(15, 10, 30, 0.5)',
+                        landcolor='rgba(30, 20, 50, 0.3)',
+                        oceancolor='rgba(15, 10, 30, 0.5)',
+                        showcountries=True,
+                        countrycolor='rgba(138, 43, 226, 0.3)',
+                        showcoastlines=True,
+                        coastlinecolor='rgba(186, 85, 211, 0.5)',
+                        projection_type='orthographic',
+                        projection_rotation=dict(lon=10, lat=20, roll=0)
+                    ),
+                    font=dict(color='white', family='Inter'),
+                    coloraxis_colorbar=dict(
+                        title="Approval %",
+                        ticksuffix='%',
+                        bgcolor='rgba(30, 20, 50, 0.8)',
+                        tickcolor='white',
+                        tickfont=dict(color='white')
+                    )
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Bottom stats row
+        col_a, col_b, col_c = st.columns(3)
+        
+        with col_a:
+            total_volume = geo_data['total_volume'].sum()
+            st.markdown(f"""
+            <div class="dark-stat-card">
+                <p class="dark-stat-label">TOTAL EARNING</p>
+                <p class="dark-stat-value" style="font-size: 1.75rem;">${total_volume:,.0f}</p>
+                <p class="dark-stat-delta">
+                    <span style="color: #10b981;">▲</span> 10%
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_b:
+            avg_approval = geo_data['approval_rate'].mean()
+            st.markdown(f"""
+            <div class="dark-stat-card">
+                <p class="dark-stat-label">TREND</p>
+                <p class="dark-stat-value" style="font-size: 1.75rem;">{avg_approval:.0f}%</p>
+                <p class="dark-stat-delta">
+                    <span style="color: #7dd3fc;">→</span> Compared to 12M last year
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_c:
+            total_coverage = len(geo_data)
+            st.markdown(f"""
+            <div class="dark-stat-card">
+                <p class="dark-stat-label">TOTAL COVERAGE</p>
+                <p class="dark-stat-value" style="font-size: 1.75rem;">{total_coverage}</p>
+                <p class="dark-stat-delta">
+                    <span style="color: #7dd3fc;">→</span> Countries
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("---")
     
